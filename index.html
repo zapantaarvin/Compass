@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compass · Your Financial North Star</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    body { font-family: Inter, sans-serif; -webkit-font-smoothing: antialiased; }
+    h1,h2,h3,h4 { letter-spacing: -0.02em; }
+
+    /* ── layout ── */
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+    .page-wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    /* ── nav ── */
+    .nav-tab { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+               transition: all .15s; white-space: nowrap; cursor: pointer; color: #6b7280; }
+    .nav-tab:hover { color: #111; background: #f9fafb; }
+    .nav-tab.active { background: #0a0a0a; color: #fff; }
+    .nav-tab.locked { opacity: 0.4; cursor: default; pointer-events: none; }
+
+    /* ── cards ── */
+    .card { background: #fff; border-radius: 16px; border: 1.5px solid #f1f5f9; padding: 24px; }
+    .card-sm { background: #fff; border-radius: 12px; border: 1.5px solid #f1f5f9; padding: 16px; }
+    .card-dark { background: #0a0a0a; border-radius: 16px; padding: 24px; color: #fff; }
+
+    /* ── dream paths ── */
+    .path-card { border: 2px solid #f1f5f9; border-radius: 14px; padding: 18px;
+                 cursor: pointer; transition: all .15s; }
+    .path-card:hover { border-color: #d1d5db; transform: translateY(-1px); }
+    .path-card.selected { border-color: #14b8a6; background: #f0fdfa; }
+
+    /* ── investment steps ── */
+    .invest-step { border-radius: 14px; border: 1.5px solid #f1f5f9; padding: 20px;
+                   transition: border-color .2s; }
+    .invest-step.done { border-color: #bbf7d0; background: #f0fdf4; }
+    .invest-step.active { border-color: #14b8a6; }
+    .invest-step.locked { opacity: 0.5; }
+
+    /* ── grade display ── */
+    .grade-badge { width: 80px; height: 80px; border-radius: 50%; display: flex;
+                   align-items: center; justify-content: center; font-size: 36px;
+                   font-weight: 800; letter-spacing: -0.04em; flex-shrink: 0; }
+
+    /* ── forms ── */
+    .field { border: 1.5px solid #e5e7eb; border-radius: 10px; padding: 10px 14px;
+             font-family: inherit; font-size: 14px; width: 100%;
+             transition: border-color .15s; background: #fff; color: #111; }
+    .field:focus { outline: none; border-color: #14b8a6; }
+    select.field { cursor: pointer; }
+    textarea.field { resize: vertical; }
+    .field-label { font-size: 12px; font-weight: 600; color: #6b7280;
+                   text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: block; }
+
+    /* ── budget pct input ── */
+    .pct-input { border: 1.5px solid #e5e7eb; border-radius: 8px; width: 64px;
+                 padding: 6px 8px; font-size: 14px; font-weight: 600; text-align: center;
+                 font-family: inherit; transition: border-color .15s; }
+    .pct-input:focus { outline: none; border-color: #14b8a6; }
+
+    /* ── buttons ── */
+    .btn { border-radius: 10px; font-size: 14px; font-weight: 600; padding: 11px 22px;
+           transition: all .15s; display: inline-flex; align-items: center; gap: 8px;
+           cursor: pointer; border: none; }
+    .btn-dark { background: #0a0a0a; color: #fff; }
+    .btn-dark:hover { background: #222; }
+    .btn-teal { background: #14b8a6; color: #fff; }
+    .btn-teal:hover { background: #0d9488; }
+    .btn-outline { border: 1.5px solid #e5e7eb; color: #374151; background: #fff; padding: 10px 20px; }
+    .btn-outline:hover { border-color: #9ca3af; }
+    .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 8px; }
+
+    /* ── chip ── */
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+    /* ── step wizard ── */
+    .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex;
+                align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+                transition: all .2s; flex-shrink: 0; }
+    .step-dot.done { background: #14b8a6; color: #fff; }
+    .step-dot.active { background: #0a0a0a; color: #fff; }
+    .step-dot.pending { background: #f1f5f9; color: #9ca3af; }
+
+    /* ── drop zone ── */
+    .drop-zone { border: 2px dashed #d1d5db; border-radius: 14px; transition: all .2s; }
+    .drop-zone.drag-over { border-color: #14b8a6; background: #f0fdfa; }
+
+    /* ── animations ── */
+    .fade-in { animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+    /* ── hero section ── */
+    .hero-bg { background: #0a0a0a; }
+    .teal-text { color: #2dd4bf; }
+
+    /* ── rule cards ── */
+    .rule-num { font-size: 11px; font-weight: 700; color: #14b8a6; letter-spacing: 0.04em; }
+
+    /* ── progress bar ── */
+    .prog-bar { height: 4px; border-radius: 2px; background: #f1f5f9; }
+    .prog-fill { height: 100%; border-radius: 2px; background: #14b8a6; transition: width .4s; }
+
+    /* ── analyze results ── */
+    .cat-bar { height: 7px; border-radius: 4px; background: #f1f5f9; overflow: hidden; }
+    .cat-fill { height: 100%; border-radius: 4px; transition: width .6s; }
+  </style>
+</head>
+<body class="bg-neutral-50 text-neutral-900 min-h-screen">
+
+<!-- ══════════════════════════════════════════════════════
+     HEADER / NAV
+═══════════════════════════════════════════════════════ -->
+<header class="bg-white/95 backdrop-blur-sm border-b border-neutral-100 sticky top-0 z-40">
+  <div class="max-w-6xl mx-auto px-5 py-3 flex items-center gap-4">
+    <!-- Logo -->
+    <div class="flex items-center gap-2 flex-shrink-0 mr-2">
+      <div class="w-7 h-7 bg-black rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2l2.09 6.43H20.5l-5.27 3.84 2.02 6.19L12 14.57l-5.25 3.89 2.02-6.19L3.5 8.43H9.91L12 2z"/>
+        </svg>
+      </div>
+      <span class="text-sm font-bold tracking-tight hidden sm:block">Compass</span>
+    </div>
+    <!-- Tabs -->
+    <nav class="flex items-center gap-1 overflow-x-auto flex-1" id="mainNav">
+      <button class="nav-tab active" onclick="switchTab('home')">Home</button>
+      <button class="nav-tab" id="nav-setup" onclick="switchTab('setup')">① Profile</button>
+      <button class="nav-tab locked" id="nav-dream" onclick="switchTab('dream')">② Dream Life</button>
+      <button class="nav-tab locked" id="nav-budget" onclick="switchTab('budget')">③ My Budget</button>
+      <button class="nav-tab locked" id="nav-invest" onclick="switchTab('invest')">④ Invest</button>
+      <button class="nav-tab locked" id="nav-analyze" onclick="switchTab('analyze')">⑤ Analyze</button>
+    </nav>
+    <!-- Progress chip -->
+    <div class="flex-shrink-0 hidden sm:block">
+      <span id="headerProgress" class="chip bg-neutral-100 text-neutral-500">Not started</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: HOME
+═══════════════════════════════════════════════════════ -->
+<div id="tab-home" class="tab-section active">
+
+  <!-- Hero -->
+  <div class="hero-bg text-white">
+    <div class="max-w-4xl mx-auto px-5 py-20 text-center">
+      <div class="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-1.5 text-sm text-white/70 mb-6">
+        <span class="teal-text font-semibold">Ramit Sethi · Morgan Housel · Napoleon Hill · Chinkee Tan</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight mb-5">
+        Build a life you love,<br><span class="teal-text">not a budget you hate.</span>
+      </h1>
+      <p class="text-white/60 text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
+        A step-by-step financial coaching system that helps you design your dream life, understand your money, and build lasting wealth — through proven principles, not spreadsheet shame.
+      </p>
+      <div class="flex flex-wrap gap-3 justify-center">
+        <button onclick="switchTab('setup')" class="btn btn-teal">Start My Journey →</button>
+        <button onclick="document.getElementById('rules').scrollIntoView({behavior:'smooth'})" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.2)">See the principles</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Promise bar -->
+  <div class="bg-neutral-900 text-white">
+    <div class="max-w-5xl mx-auto px-5 py-5 grid grid-cols-2 sm:grid-cols-5 gap-4 text-center text-xs font-medium text-white/50">
+      <div><span class="text-teal-400 block text-base mb-1">🎯</span>Define your dream life</div>
+      <div><span class="text-teal-400 block text-base mb-1">📊</span>Know your numbers</div>
+      <div><span class="text-teal-400 block text-base mb-1">💰</span>Build a plan you can live with</div>
+      <div><span class="text-teal-400 block text-base mb-1">📈</span>Invest step by step</div>
+      <div><span class="text-teal-400 block text-base mb-1">🎓</span>Get graded coaching</div>
+    </div>
+  </div>
+
+  <div class="page-wrap space-y-16">
+
+    <!-- Teachers -->
+    <div>
+      <p class="text-xs font-semibold text-neutral-400 uppercase tracking-widest text-center mb-8">Principles drawn from</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card text-center">
+          <div class="text-3xl mb-3">💼</div>
+          <h3 class="text-sm font-bold mb-1">Ramit Sethi</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">"Automate first, then spend intentionally on the things that matter most."</p>
+          <span class="chip bg-indigo-50 text-indigo-600 mt-3">Conscious Spending</span>
+        </div>
+        <div class="card text-center">
+          <div class="text-3xl mb-3">🧠</div>
+          <h3 class="text-sm font-bold mb-1">Morgan Housel</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">"Behavior matters more than intelligence. Wealth is what you don't spend."</p>
+          <span class="chip bg-teal-50 text-teal-600 mt-3">Psychology of Money</span>
+        </div>
+        <div class="card text-center">
+          <div class="text-3xl mb-3">🏆</div>
+          <h3 class="text-sm font-bold mb-1">Napoleon Hill</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">"Definiteness of purpose + daily discipline = financial achievement."</p>
+          <span class="chip bg-amber-50 text-amber-600 mt-3">Purpose & Habits</span>
+        </div>
+        <div class="card text-center">
+          <div class="text-3xl mb-3">🌟</div>
+          <h3 class="text-sm font-bold mb-1">Chinkee Tan</h3>
+          <p class="text-xs text-neutral-400 leading-relaxed">"Intentional spending always beats emotional spending. Be the boss of your money."</p>
+          <span class="chip bg-rose-50 text-rose-600 mt-3">Intentionality</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10 Rules -->
+    <div id="rules">
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold">10 Money Rules for a Dream Life</h2>
+        <p class="text-neutral-400 text-sm mt-2">The principles your financial plan will be built on</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="card"><p class="rule-num mb-2">RULE 01</p><h4 class="text-sm font-bold mb-1">Know your dream before building your budget</h4><p class="text-xs text-neutral-400 leading-relaxed">A plan without purpose becomes a restriction you'll quit. Money is a tool — define what it's for first.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 02</p><h4 class="text-sm font-bold mb-1">Track by categories, not every purchase</h4><p class="text-xs text-neutral-400 leading-relaxed">Obsessing over $4 coffee misses the point. The goal is intentionality across your whole spending pattern.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 03</p><h4 class="text-sm font-bold mb-1">Keep fixed costs ≤ 55–60% of take-home pay</h4><p class="text-xs text-neutral-400 leading-relaxed">High fixed costs are the #1 source of money stress. The lower, the more flexibility and freedom you have.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 04</p><h4 class="text-sm font-bold mb-1">Invest for future-you before expanding lifestyle</h4><p class="text-xs text-neutral-400 leading-relaxed">The 401(k) match is free money. Get it first. Then invest at least 10% of take-home before spending on wants.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 05</p><h4 class="text-sm font-bold mb-1">Save 5–10% for emergencies and near-term goals</h4><p class="text-xs text-neutral-400 leading-relaxed">Life will throw curveballs. Room for error isn't pessimism — it's the most important financial plan of all.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 06</p><h4 class="text-sm font-bold mb-1">Guilt-free spending is not optional, it's required</h4><p class="text-xs text-neutral-400 leading-relaxed">A joyless budget is one you'll abandon. Spend extravagantly on what you love. Cut ruthlessly on what you don't.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 07</p><h4 class="text-sm font-bold mb-1">Build room for error</h4><p class="text-xs text-neutral-400 leading-relaxed">Survival beats optimization every time. The ability to endure a bad month is worth more than a perfect plan that breaks.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 08</p><h4 class="text-sm font-bold mb-1">Live below your means — wealth is what's unseen</h4><p class="text-xs text-neutral-400 leading-relaxed">The car you drive is wealth spent. The brokerage account no one sees is wealth built. Saving rate drives independence.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 09</p><h4 class="text-sm font-bold mb-1">Avoid comparison spending</h4><p class="text-xs text-neutral-400 leading-relaxed">"Never enough" and status chasing destroy satisfaction. Enough is a skill that most people never develop.</p></div>
+        <div class="card"><p class="rule-num mb-2">RULE 10</p><h4 class="text-sm font-bold mb-1">Make decisions you can actually stick with</h4><p class="text-xs text-neutral-400 leading-relaxed">A reasonable plan consistently followed beats a perfect plan you abandon. Behavior always beats intelligence.</p></div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="card-dark text-center py-12">
+      <h2 class="text-2xl font-bold text-white mb-3">Ready to build your financial blueprint?</h2>
+      <p class="text-white/50 text-sm mb-6 max-w-md mx-auto">It takes about 5 minutes to set up your profile and get a personalized spending plan.</p>
+      <button onclick="switchTab('setup')" class="btn btn-teal">Start My Journey →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: SETUP (4-step wizard)
+═══════════════════════════════════════════════════════ -->
+<div id="tab-setup" class="tab-section">
+  <div class="page-wrap max-w-xl mx-auto">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-bold">Set Up Your Profile</h2>
+      <p class="text-neutral-400 text-sm mt-1">This powers your personalized spending plan and investment guide.</p>
+    </div>
+
+    <!-- Step indicators -->
+    <div class="flex items-center gap-2 mb-8 justify-center" id="stepIndicators"></div>
+
+    <!-- Step 1: About you -->
+    <div id="step-1" class="card fade-in space-y-4">
+      <h3 class="text-base font-bold">Step 1 of 4 — About You</h3>
+      <div>
+        <label class="field-label">Your first name</label>
+        <input type="text" id="p-name" class="field" placeholder="e.g. Alex">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="field-label">Age range</label>
+          <select id="p-age" class="field">
+            <option value="">Select…</option>
+            <option>Under 25</option><option>25–34</option>
+            <option>35–44</option><option>45–54</option><option>55+</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Household size</label>
+          <select id="p-household" class="field">
+            <option value="1">Just me</option><option value="2">2 people</option>
+            <option value="3">3 people</option><option value="4">4+ people</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="field-label">Country / Region</label>
+        <select id="p-country" class="field">
+          <option value="us">United States</option>
+          <option value="ph">Philippines</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <button onclick="goStep(2)" class="btn btn-dark w-full mt-2">Continue →</button>
+    </div>
+
+    <!-- Step 2: Income -->
+    <div id="step-2" class="card fade-in space-y-4 hidden">
+      <h3 class="text-base font-bold">Step 2 of 4 — Your Income</h3>
+      <div>
+        <label class="field-label">Monthly take-home pay (after taxes)</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">$</span>
+          <input type="number" id="p-income" class="field" style="padding-left:28px" placeholder="e.g. 4500" min="0">
+        </div>
+        <p class="text-xs text-neutral-400 mt-1">Enter net pay after taxes and any pre-tax 401(k) deductions.</p>
+      </div>
+      <div>
+        <label class="field-label">Do you have a 401(k) or employer retirement plan?</label>
+        <select id="p-has401k" class="field" onchange="toggle401k(this.value)">
+          <option value="no">No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </div>
+      <div id="k401fields" class="hidden space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">Your contribution %</label>
+            <input type="number" id="p-401contrib" class="field" placeholder="e.g. 6" min="0" max="100">
+          </div>
+          <div>
+            <label class="field-label">Employer match %</label>
+            <input type="number" id="p-401match" class="field" placeholder="e.g. 3 (or 0)" min="0" max="100">
+          </div>
+        </div>
+        <p class="text-xs text-teal-600 bg-teal-50 rounded-lg px-3 py-2">💡 Always contribute enough to capture your full employer match — it's an instant 100% return on that money.</p>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="goStep(1)" class="btn btn-outline flex-shrink-0">← Back</button>
+        <button onclick="goStep(3)" class="btn btn-dark flex-1">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Current situation -->
+    <div id="step-3" class="card fade-in space-y-4 hidden">
+      <h3 class="text-base font-bold">Step 3 of 4 — Your Current Situation</h3>
+      <div>
+        <label class="field-label">Do you have high-interest debt? (credit cards, personal loans above 7% APR)</label>
+        <select id="p-debt" class="field">
+          <option value="no">No high-interest debt</option>
+          <option value="some">Yes, some ($1–$5k)</option>
+          <option value="significant">Yes, significant ($5k+)</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Emergency fund status</label>
+        <select id="p-emergency" class="field">
+          <option value="none">None — starting from zero</option>
+          <option value="partial">Partial — less than 3 months</option>
+          <option value="3mo">3 months of expenses</option>
+          <option value="6mo">6+ months of expenses</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Housing situation</label>
+        <select id="p-housing" class="field">
+          <option value="rent">Renting</option>
+          <option value="own">Own / mortgage</option>
+          <option value="family">Living with family (low cost)</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Estimated monthly fixed costs (rent/mortgage + car + insurance)</label>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">$</span>
+          <input type="number" id="p-fixed" class="field" style="padding-left:28px" placeholder="e.g. 2200" min="0">
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="goStep(2)" class="btn btn-outline flex-shrink-0">← Back</button>
+        <button onclick="goStep(4)" class="btn btn-dark flex-1">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Mindset -->
+    <div id="step-4" class="card fade-in space-y-4 hidden">
+      <h3 class="text-base font-bold">Step 4 of 4 — Your Money Mindset</h3>
+      <div>
+        <label class="field-label">How stressed are you about money right now?</label>
+        <select id="p-stress" class="field">
+          <option value="low">Low — I feel pretty good</option>
+          <option value="medium">Medium — some worry</option>
+          <option value="high">High — it weighs on me daily</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Investing knowledge level</label>
+        <select id="p-knowledge" class="field">
+          <option value="beginner">Beginner — I'm new to this</option>
+          <option value="some">Some — I know the basics</option>
+          <option value="intermediate">Intermediate — I invest already</option>
+          <option value="advanced">Advanced — I'm well-versed</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">What's your biggest money challenge right now?</label>
+        <select id="p-challenge" class="field">
+          <option value="overspend">I spend more than I earn</option>
+          <option value="nosave">I can't seem to save consistently</option>
+          <option value="noinvest">I don't know how or where to invest</option>
+          <option value="debt">Debt is blocking my progress</option>
+          <option value="direction">I just don't know where to start</option>
+        </select>
+      </div>
+      <div class="flex gap-3">
+        <button onclick="goStep(3)" class="btn btn-outline flex-shrink-0">← Back</button>
+        <button onclick="completeSetup()" class="btn btn-teal flex-1">Build My Blueprint →</button>
+      </div>
+    </div>
+
+    <!-- Step done -->
+    <div id="step-done" class="card fade-in text-center hidden">
+      <div class="text-5xl mb-4">🎉</div>
+      <h3 class="text-xl font-bold mb-2">Profile complete, <span id="doneNameDisplay"></span>!</h3>
+      <p class="text-sm text-neutral-400 mb-6 leading-relaxed">Your personalized financial blueprint is ready. Next, let's define what your dream life actually looks like — before we touch a single number.</p>
+      <button onclick="switchTab('dream')" class="btn btn-dark">Define My Dream Life →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: DREAM LIFE
+═══════════════════════════════════════════════════════ -->
+<div id="tab-dream" class="tab-section">
+  <div class="page-wrap max-w-2xl mx-auto space-y-8">
+    <div>
+      <h2 class="text-2xl font-bold">Design Your Dream Life</h2>
+      <p class="text-neutral-400 text-sm mt-1">Money without a purpose becomes a burden. Let's define what you're actually building toward.</p>
+    </div>
+
+    <!-- Path selection -->
+    <div class="card">
+      <h3 class="text-sm font-bold mb-1">What matters most to you right now?</h3>
+      <p class="text-xs text-neutral-400 mb-4">Choose the path that resonates. You can adjust as you grow.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="dreamPaths">
+        <div class="path-card" data-path="security" onclick="selectPath('security')">
+          <div class="text-xl mb-2">🛡️</div>
+          <h4 class="text-sm font-bold">Security First</h4>
+          <p class="text-xs text-neutral-400 mt-1">Stop worrying about money. Build stability, eliminate debt, and create a financial safety net that gives you peace of mind.</p>
+        </div>
+        <div class="path-card" data-path="freedom" onclick="selectPath('freedom')">
+          <div class="text-xl mb-2">🕊️</div>
+          <h4 class="text-sm font-bold">Freedom First</h4>
+          <p class="text-xs text-neutral-400 mt-1">More time, less stress. Money is a tool for choices — work you love, say no to things that drain you, live on your own terms.</p>
+        </div>
+        <div class="path-card" data-path="family" onclick="selectPath('family')">
+          <div class="text-xl mb-2">🏡</div>
+          <h4 class="text-sm font-bold">Family First</h4>
+          <p class="text-xs text-neutral-400 mt-1">Protect and provide for the people you love. Build a home, fund education, leave something meaningful behind.</p>
+        </div>
+        <div class="path-card" data-path="growth" onclick="selectPath('growth')">
+          <div class="text-xl mb-2">🚀</div>
+          <h4 class="text-sm font-bold">Growth First</h4>
+          <p class="text-xs text-neutral-400 mt-1">Build income, sharpen skills, grow a business. Invest aggressively in yourself and compound your earnings over time.</p>
+        </div>
+        <div class="path-card" data-path="experience" onclick="selectPath('experience')">
+          <div class="text-xl mb-2">✈️</div>
+          <h4 class="text-sm font-bold">Experience First</h4>
+          <p class="text-xs text-neutral-400 mt-1">Travel, explore, collect memories. Life is short — design a life full of intentional experiences that money can enable.</p>
+        </div>
+        <div class="path-card" data-path="legacy" onclick="selectPath('legacy')">
+          <div class="text-xl mb-2">🌳</div>
+          <h4 class="text-sm font-bold">Legacy First</h4>
+          <p class="text-xs text-neutral-400 mt-1">Build generational wealth. Invest, give generously, and leave a financial foundation that outlasts you.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vision prompts -->
+    <div class="card space-y-4">
+      <h3 class="text-sm font-bold">Paint the picture</h3>
+      <p class="text-xs text-neutral-400">Answer honestly — there are no wrong answers. This is your life, not a textbook exercise.</p>
+      <div>
+        <label class="field-label">What does a great ordinary Tuesday look like in your dream life?</label>
+        <textarea id="d-tuesday" rows="2" class="field" placeholder="Where are you? What are you doing? Who are you with?"></textarea>
+      </div>
+      <div>
+        <label class="field-label">What would you spend MORE on if money wasn't a worry?</label>
+        <textarea id="d-moreon" rows="2" class="field" placeholder="Travel, experiences, family, giving, health, business…"></textarea>
+      </div>
+      <div>
+        <label class="field-label">What would financial freedom allow you to STOP doing?</label>
+        <textarea id="d-stop" rows="2" class="field" placeholder="Working a job you hate, worrying about bills, saying no to things…"></textarea>
+      </div>
+    </div>
+
+    <!-- Time goals -->
+    <div class="card space-y-4">
+      <h3 class="text-sm font-bold">Set your financial north stars</h3>
+      <div>
+        <label class="field-label">In 1 year, I want to…</label>
+        <input type="text" id="d-1yr" class="field" placeholder="e.g. Pay off my car, save $10k, start investing">
+      </div>
+      <div>
+        <label class="field-label">In 3 years, I want to…</label>
+        <input type="text" id="d-3yr" class="field" placeholder="e.g. Be debt-free, own a home, have 6 months of savings">
+      </div>
+      <div>
+        <label class="field-label">In 10 years, I want to…</label>
+        <input type="text" id="d-10yr" class="field" placeholder="e.g. Be financially independent, retire early, leave a legacy">
+      </div>
+      <button onclick="saveDreamLife()" class="btn btn-dark w-full">Save My Dream Life →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: MY BUDGET
+═══════════════════════════════════════════════════════ -->
+<div id="tab-budget" class="tab-section">
+  <div class="page-wrap space-y-6">
+    <div class="flex items-start justify-between flex-wrap gap-4">
+      <div>
+        <h2 class="text-2xl font-bold">My Spending Plan</h2>
+        <p class="text-neutral-400 text-sm mt-1">A budget that funds your dream life — not one that restricts it.</p>
+      </div>
+      <div class="card-sm text-center px-5">
+        <p class="text-xs text-neutral-400">Monthly Income</p>
+        <p class="text-2xl font-bold mt-0.5" id="budgetIncomeDisplay">—</p>
+      </div>
+    </div>
+
+    <!-- Template selector -->
+    <div class="card">
+      <h3 class="text-sm font-bold mb-1">Choose your framework</h3>
+      <p class="text-xs text-neutral-400 mb-4">Pick a starting template, then customize it to fit your real life. There's no single right answer.</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="templateBtns">
+        <button onclick="loadTemplate('ramit')" class="text-xs font-semibold border-2 border-black bg-black text-white rounded-lg px-3 py-2.5 transition" data-tpl="ramit">Ramit CSP</button>
+        <button onclick="loadTemplate('503020')" class="text-xs font-semibold border-2 border-neutral-200 rounded-lg px-3 py-2.5 hover:border-neutral-400 transition" data-tpl="503020">50/30/20</button>
+        <button onclick="loadTemplate('debt')" class="text-xs font-semibold border-2 border-neutral-200 rounded-lg px-3 py-2.5 hover:border-neutral-400 transition" data-tpl="debt">Debt Payoff</button>
+        <button onclick="loadTemplate('highcost')" class="text-xs font-semibold border-2 border-neutral-200 rounded-lg px-3 py-2.5 hover:border-neutral-400 transition" data-tpl="highcost">High-Cost City</button>
+      </div>
+      <p id="templateDesc" class="text-xs text-neutral-400 mt-3 leading-relaxed"></p>
+    </div>
+
+    <!-- Budget builder -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Pie chart -->
+      <div class="card flex flex-col items-center">
+        <h3 class="text-sm font-bold w-full mb-4">Allocation</h3>
+        <div class="relative" style="width:180px;height:180px">
+          <canvas id="budgetChart"></canvas>
+          <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span class="text-xs text-neutral-400">Remaining</span>
+            <span id="budgetRemaining" class="text-lg font-bold text-neutral-900">100%</span>
+          </div>
+        </div>
+        <div id="budgetLegend" class="mt-4 w-full space-y-2"></div>
+      </div>
+
+      <!-- Sliders / inputs -->
+      <div class="card space-y-4">
+        <h3 class="text-sm font-bold">Adjust your categories</h3>
+        <p class="text-xs text-neutral-400">Total must equal 100%. Drag or type to adjust.</p>
+        <div id="budgetInputs" class="space-y-4"></div>
+        <div class="pt-2 border-t border-neutral-100">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-neutral-500">Total allocated</span>
+            <span id="budgetTotalPct" class="text-sm font-bold">—</span>
+          </div>
+          <div id="budgetValidMsg" class="text-xs mt-1"></div>
+        </div>
+        <button onclick="saveBudget()" class="btn btn-dark w-full">Save My Plan →</button>
+      </div>
+    </div>
+
+    <!-- Dollar breakdown -->
+    <div class="card" id="budgetBreakdownCard">
+      <h3 class="text-sm font-bold mb-4">Your monthly dollar breakdown</h3>
+      <div id="budgetBreakdown" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+      <div class="mt-4 p-3 bg-teal-50 rounded-xl">
+        <p class="text-xs text-teal-800 leading-relaxed" id="budgetCoachTip"></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: INVEST
+═══════════════════════════════════════════════════════ -->
+<div id="tab-invest" class="tab-section">
+  <div class="page-wrap max-w-2xl mx-auto space-y-6">
+    <div>
+      <h2 class="text-2xl font-bold">Investment Roadmap</h2>
+      <p class="text-neutral-400 text-sm mt-1">The correct order matters. Do these in sequence — don't skip ahead.</p>
+    </div>
+
+    <div class="card bg-neutral-900 text-white text-sm leading-relaxed">
+      <span class="teal-text font-semibold">Ramit Sethi's rule: </span>
+      "Automate your money so it flows to the right places without willpower. Invest early, invest consistently, and ignore the noise."
+    </div>
+
+    <div id="investSteps" class="space-y-3"></div>
+
+    <div class="card">
+      <h3 class="text-sm font-bold mb-3">Investing basics to know</h3>
+      <div class="space-y-3 text-xs text-neutral-600 leading-relaxed">
+        <div class="flex gap-3"><span class="text-teal-500 font-bold flex-shrink-0">📌</span><div><strong class="text-neutral-900">Index funds over stock picking.</strong> Morgan Housel: "Most investors would be better off buying a total market index fund and never looking at it again."</div></div>
+        <div class="flex gap-3"><span class="text-teal-500 font-bold flex-shrink-0">📌</span><div><strong class="text-neutral-900">Time in market beats timing the market.</strong> Starting at 25 with $200/month beats starting at 35 with $400/month — compounding is the 8th wonder of the world.</div></div>
+        <div class="flex gap-3"><span class="text-teal-500 font-bold flex-shrink-0">📌</span><div><strong class="text-neutral-900">Automate everything.</strong> Set it up once. Remove the decision. Behavior is the hardest part — automation solves it.</div></div>
+        <div class="flex gap-3"><span class="text-teal-500 font-bold flex-shrink-0">📌</span><div><strong class="text-neutral-900">Save rate &gt; return rate.</strong> The rate you save has a far bigger impact on wealth than which fund you pick. Focus there first.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: ANALYZE
+═══════════════════════════════════════════════════════ -->
+<div id="tab-analyze" class="tab-section">
+  <div class="page-wrap space-y-6">
+    <div>
+      <h2 class="text-2xl font-bold">Financial Analyzer</h2>
+      <p class="text-neutral-400 text-sm mt-1">Upload a bank statement CSV and get a grade, breakdown, and personalized coaching.</p>
+    </div>
+
+    <!-- Upload -->
+    <div id="analyzeUpload" class="card">
+      <h3 class="text-sm font-bold mb-1">Upload your bank statement</h3>
+      <p class="text-xs text-neutral-400 mb-4">Download a CSV from your bank's website and drop it here. Works with most banks (Navy Federal, Capital One, Chase, BofA, etc.). Your data never leaves your device.</p>
+      <label id="analyzeDropZone" class="drop-zone cursor-pointer block text-center py-10 px-5 rounded-xl">
+        <div class="text-3xl mb-3">📂</div>
+        <p class="text-sm font-semibold text-neutral-700">Drop CSV here or click to browse</p>
+        <p class="text-xs text-neutral-400 mt-1">Supports most bank CSV formats · Data stays 100% local</p>
+        <input type="file" id="analyzeFile" accept=".csv" class="hidden" onchange="analyzeCSV(this)">
+      </label>
+      <div class="mt-4 p-3 bg-neutral-50 rounded-xl">
+        <p class="text-xs font-semibold text-neutral-500 mb-1">How to get your CSV:</p>
+        <p class="text-xs text-neutral-400">Navy Federal: Accounts → Statement → Download CSV &nbsp;·&nbsp; Capital One: Account → Download Transactions &nbsp;·&nbsp; Chase: Account Activity → Download</p>
+      </div>
+    </div>
+
+    <!-- Results (hidden until analyzed) -->
+    <div id="analyzeResults" class="hidden space-y-5 fade-in">
+      <!-- Grade card -->
+      <div class="card">
+        <div class="flex items-center gap-5 flex-wrap">
+          <div id="gradeDisplay" class="grade-badge"></div>
+          <div class="flex-1 min-w-0">
+            <h3 class="text-lg font-bold" id="gradeTitle"></h3>
+            <p class="text-sm text-neutral-400 mt-1" id="gradeSubtitle"></p>
+          </div>
+          <div class="flex flex-col gap-1 text-right flex-shrink-0">
+            <p class="text-xs text-neutral-400">Period analyzed</p>
+            <p class="text-sm font-bold" id="analyzePeriod">—</p>
+            <p class="text-xs text-neutral-400 mt-1">Monthly avg</p>
+            <p class="text-sm font-bold text-red-500" id="analyzeMonthAvg">—</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key metrics -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="analyzeMetrics"></div>
+
+      <!-- Category breakdown -->
+      <div class="card">
+        <h3 class="text-sm font-bold mb-4">Spending by category</h3>
+        <div id="analyzeCats" class="space-y-3"></div>
+      </div>
+
+      <!-- Coaching -->
+      <div class="card space-y-4" id="analyzeCoaching">
+        <h3 class="text-sm font-bold">Personalized coaching</h3>
+        <div id="coachingInsights" class="space-y-3"></div>
+      </div>
+
+      <!-- Next steps -->
+      <div class="card-dark">
+        <h3 class="text-sm font-bold text-white mb-3">Your next 3 actions</h3>
+        <div id="nextSteps" class="space-y-2"></div>
+      </div>
+
+      <button onclick="resetAnalyze()" class="btn btn-outline w-full text-sm">Upload a different statement</button>
+    </div>
+
+  </div>
+</div>
+
+<footer class="text-center py-6 text-xs text-neutral-300 border-t border-neutral-100 mt-8">
+  Compass · Principles from Ramit Sethi, Morgan Housel, Napoleon Hill & Chinkee Tan · All data stays in your browser
+</footer>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+
+const STORAGE_KEY = 'compass_v1';
+
+const DEFAULT_STATE = {
+  profile: null,
+  dreamLife: null,
+  budget: null,
+  investSteps: { s1:false, s2:false, s3:false, s4:false, s5:false, s6:false },
+  setupStep: 1,
+  currentTab: 'home',
+};
+
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? { ...DEFAULT_STATE, ...JSON.parse(s) } : { ...DEFAULT_STATE };
+  } catch { return { ...DEFAULT_STATE }; }
+}
+
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState();
+let budgetChart = null;
+
+// ════════════════════════════════════════════════
+// TAB NAVIGATION
+// ════════════════════════════════════════════════
+
+const TABS = ['home','setup','dream','budget','invest','analyze'];
+
+function switchTab(id) {
+  if (!['home','setup'].includes(id) && !state.profile) {
+    switchTab('setup'); return;
+  }
+  TABS.forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === id);
+    const nav = document.getElementById(`nav-${t}`);
+    if (nav) nav.classList.toggle('active', t === id);
+  });
+  state.currentTab = id;
+  window.scrollTo(0, 0);
+  if (id === 'budget')  initBudgetTab();
+  if (id === 'invest')  renderInvestSteps();
+  if (id === 'analyze') initAnalyzeTab();
+  updateNavLocks();
+}
+
+function updateNavLocks() {
+  const profileDone = !!state.profile;
+  const dreamDone   = !!state.dreamLife;
+  ['dream','budget','invest','analyze'].forEach(t => {
+    const el = document.getElementById(`nav-${t}`);
+    if (!el) return;
+    el.classList.toggle('locked', !profileDone);
+  });
+  updateHeaderProgress();
+}
+
+function updateHeaderProgress() {
+  const steps = [!!state.profile, !!state.dreamLife, !!state.budget].filter(Boolean).length;
+  const labels = ['Not started','Profile done','Dream defined','Budget set'];
+  const el = document.getElementById('headerProgress');
+  el.textContent = labels[steps] || 'Not started';
+  el.className = `chip ${steps === 3 ? 'bg-teal-100 text-teal-700' : 'bg-neutral-100 text-neutral-500'}`;
+}
+
+// ════════════════════════════════════════════════
+// SETUP WIZARD
+// ════════════════════════════════════════════════
+
+function renderStepIndicators(active) {
+  document.getElementById('stepIndicators').innerHTML = [1,2,3,4].map(n => `
+    <div class="flex items-center gap-2">
+      <div class="step-dot ${n < active ? 'done' : n === active ? 'active' : 'pending'}">${n < active ? '✓' : n}</div>
+      ${n < 4 ? '<div class="w-8 h-0.5 bg-neutral-200"></div>' : ''}
+    </div>`).join('');
+}
+
+function goStep(n) {
+  for (let i = 1; i <= 4; i++) document.getElementById(`step-${i}`).classList.add('hidden');
+  const el = document.getElementById(`step-${n}`);
+  if (el) el.classList.remove('hidden');
+  state.setupStep = n;
+  renderStepIndicators(n);
+}
+
+function toggle401k(val) {
+  document.getElementById('k401fields').classList.toggle('hidden', val !== 'yes');
+}
+
+function completeSetup() {
+  const name    = document.getElementById('p-name').value.trim();
+  const income  = parseFloat(document.getElementById('p-income').value) || 0;
+  if (!name)   { alert('Please enter your name.'); return; }
+  if (!income) { alert('Please enter your monthly take-home pay.'); return; }
+
+  state.profile = {
+    name,
+    age:         document.getElementById('p-age').value,
+    household:   document.getElementById('p-household').value,
+    country:     document.getElementById('p-country').value,
+    income,
+    has401k:     document.getElementById('p-has401k').value === 'yes',
+    contrib401k: parseFloat(document.getElementById('p-401contrib')?.value) || 0,
+    match401k:   parseFloat(document.getElementById('p-401match')?.value) || 0,
+    debt:        document.getElementById('p-debt').value,
+    emergency:   document.getElementById('p-emergency').value,
+    housing:     document.getElementById('p-housing').value,
+    fixedCosts:  parseFloat(document.getElementById('p-fixed').value) || 0,
+    stress:      document.getElementById('p-stress').value,
+    knowledge:   document.getElementById('p-knowledge').value,
+    challenge:   document.getElementById('p-challenge').value,
+  };
+
+  saveState();
+  document.getElementById('doneNameDisplay').textContent = name;
+  for (let i = 1; i <= 4; i++) document.getElementById(`step-${i}`).classList.add('hidden');
+  document.getElementById('step-done').classList.remove('hidden');
+  document.getElementById('stepIndicators').innerHTML = '';
+  updateNavLocks();
+}
+
+// ════════════════════════════════════════════════
+// DREAM LIFE
+// ════════════════════════════════════════════════
+
+function selectPath(path) {
+  document.querySelectorAll('.path-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`[data-path="${path}"]`)?.classList.add('selected');
+  if (!state.dreamLife) state.dreamLife = {};
+  state.dreamLife.path = path;
+}
+
+function saveDreamLife() {
+  state.dreamLife = {
+    ...(state.dreamLife || {}),
+    tuesday: document.getElementById('d-tuesday').value.trim(),
+    moreon:  document.getElementById('d-moreon').value.trim(),
+    stop:    document.getElementById('d-stop').value.trim(),
+    yr1:     document.getElementById('d-1yr').value.trim(),
+    yr3:     document.getElementById('d-3yr').value.trim(),
+    yr10:    document.getElementById('d-10yr').value.trim(),
+  };
+  saveState();
+  updateNavLocks();
+  switchTab('budget');
+}
+
+// ════════════════════════════════════════════════
+// BUDGET — TEMPLATES
+// ════════════════════════════════════════════════
+
+const TEMPLATES = {
+  ramit: {
+    label: 'Ramit Sethi — Conscious Spending Plan',
+    desc: 'Ramit\'s flexible system: keep fixed costs low, automate investments and savings, then spend the rest guilt-free on what matters to you. Percentages can flex — the philosophy is what matters.',
+    buckets: [
+      { key:'fixed',      label:'Fixed Costs',        pct:55, color:'#6366f1', desc:'Rent/mortgage, car, insurance, utilities, minimum debt payments' },
+      { key:'invest',     label:'Investments',         pct:10, color:'#14b8a6', desc:'401(k), Roth IRA, brokerage — pay future-you first' },
+      { key:'savings',    label:'Savings',             pct:10, color:'#10b981', desc:'Emergency fund, sinking funds, short-term goals' },
+      { key:'guiltfree',  label:'Guilt-Free Spending', pct:25, color:'#f59e0b', desc:'Dining, shopping, fun, travel — spend without guilt' },
+    ],
+  },
+  '503020': {
+    label: '50/30/20 — Classic Rule',
+    desc: 'The simple, proven starting point. 50% for needs (fixed + essentials), 30% for wants (lifestyle), 20% for saving and investing. Great if you\'re just getting started.',
+    buckets: [
+      { key:'needs',    label:'Needs (50%)',    pct:50, color:'#6366f1', desc:'Housing, food, transportation, utilities, insurance' },
+      { key:'wants',    label:'Wants (30%)',    pct:30, color:'#f59e0b', desc:'Dining out, entertainment, hobbies, subscriptions' },
+      { key:'savings',  label:'Save & Invest',  pct:20, color:'#14b8a6', desc:'Emergency fund, retirement, investing, debt payoff' },
+    ],
+  },
+  debt: {
+    label: 'Debt Payoff Mode',
+    desc: 'Aggressive debt elimination first. Cut discretionary spending to minimum, attack high-interest debt hard, while still capturing your 401(k) match. Temporary sacrifice for permanent freedom.',
+    buckets: [
+      { key:'fixed',    label:'Fixed Costs',   pct:50, color:'#6366f1', desc:'Essential fixed costs only' },
+      { key:'debt',     label:'Debt Paydown',  pct:25, color:'#ef4444', desc:'Extra payments above minimums — attack highest interest first' },
+      { key:'invest',   label:'Investments',   pct:5,  color:'#14b8a6', desc:'Minimum — at least capture employer 401(k) match' },
+      { key:'savings',  label:'Savings',       pct:10, color:'#10b981', desc:'Small emergency fund buffer ($1–2k before paying debt hard)' },
+      { key:'living',   label:'Living/Fun',    pct:10, color:'#f59e0b', desc:'Essential discretionary only — temporary mode' },
+    ],
+  },
+  highcost: {
+    label: 'High-Cost City Mode',
+    desc: 'When housing and living costs are above average (NYC, SF, LA, Manila CBD), fixed costs will naturally be higher. Adjust accordingly without shame — just compensate by trimming discretionary.',
+    buckets: [
+      { key:'fixed',      label:'Fixed Costs',   pct:65, color:'#6366f1', desc:'Higher due to housing market — work to reduce over time' },
+      { key:'invest',     label:'Investments',   pct:8,  color:'#14b8a6', desc:'Still non-negotiable — automate first' },
+      { key:'savings',    label:'Savings',       pct:7,  color:'#10b981', desc:'Emergency fund priority' },
+      { key:'guiltfree',  label:'Lifestyle',     pct:20, color:'#f59e0b', desc:'Tighter than average — focus spending on what truly matters' },
+    ],
+  },
+};
+
+let activeBuckets = [];
+
+function initBudgetTab() {
+  const income = state.profile?.income || 0;
+  document.getElementById('budgetIncomeDisplay').textContent = fmt(income);
+  if (state.budget) {
+    restoreBudget();
+  } else {
+    loadTemplate('ramit');
+  }
+}
+
+function loadTemplate(key) {
+  const tpl = TEMPLATES[key];
+  activeBuckets = tpl.buckets.map(b => ({ ...b }));
+
+  // update template buttons
+  document.querySelectorAll('[data-tpl]').forEach(btn => {
+    const active = btn.dataset.tpl === key;
+    btn.className = `text-xs font-semibold border-2 rounded-lg px-3 py-2.5 transition ${active ? 'border-black bg-black text-white' : 'border-neutral-200 hover:border-neutral-400'}`;
+  });
+  document.getElementById('templateDesc').textContent = tpl.desc;
+  renderBudgetInputs();
+  renderBudgetChart();
+  renderBudgetBreakdown();
+}
+
+function restoreBudget() {
+  activeBuckets = state.budget.buckets;
+  renderBudgetInputs();
+  renderBudgetChart();
+  renderBudgetBreakdown();
+}
+
+function renderBudgetInputs() {
+  document.getElementById('budgetInputs').innerHTML = activeBuckets.map((b, i) => `
+    <div>
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2">
+          <div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${b.color}"></div>
+          <span class="text-sm font-medium">${b.label}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="number" class="pct-input" value="${b.pct}" min="0" max="100"
+            oninput="updateBucket(${i}, this.value)" id="bucket-${i}">
+          <span class="text-xs text-neutral-400">%</span>
+        </div>
+      </div>
+      <p class="text-xs text-neutral-400 pl-5">${b.desc}</p>
+    </div>`).join('');
+  updateBudgetTotal();
+}
+
+function updateBucket(i, val) {
+  activeBuckets[i].pct = parseFloat(val) || 0;
+  renderBudgetChart();
+  renderBudgetBreakdown();
+  updateBudgetTotal();
+}
+
+function updateBudgetTotal() {
+  const total = activeBuckets.reduce((s, b) => s + (b.pct || 0), 0);
+  const el    = document.getElementById('budgetTotalPct');
+  const msg   = document.getElementById('budgetValidMsg');
+  const rem   = document.getElementById('budgetRemaining');
+  el.textContent  = `${total}%`;
+  el.className    = `text-sm font-bold ${total === 100 ? 'text-teal-600' : 'text-red-500'}`;
+  rem.textContent = `${Math.max(0, 100 - total)}%`;
+  if (total === 100) {
+    msg.innerHTML = '<span class="text-teal-600">✓ Perfect — your plan adds up to 100%</span>';
+  } else if (total > 100) {
+    msg.innerHTML = `<span class="text-red-500">⚠ ${total - 100}% over budget — reduce a category</span>`;
+  } else {
+    msg.innerHTML = `<span class="text-amber-600">${100 - total}% unallocated — assign it somewhere</span>`;
+  }
+}
+
+function renderBudgetChart() {
+  if (budgetChart) budgetChart.destroy();
+  const ctx = document.getElementById('budgetChart').getContext('2d');
+  budgetChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels:   activeBuckets.map(b => b.label),
+      datasets: [{ data: activeBuckets.map(b => b.pct), backgroundColor: activeBuckets.map(b => b.color), borderWidth: 0, hoverOffset: 6 }],
+    },
+    options: {
+      cutout: '68%',
+      animation: { duration: 400 },
+      plugins: { legend: { display: false } },
+    },
+  });
+
+  // Legend
+  document.getElementById('budgetLegend').innerHTML = activeBuckets.map(b => `
+    <div class="flex items-center gap-2.5">
+      <div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${b.color}"></div>
+      <span class="text-xs text-neutral-600 flex-1">${b.label}</span>
+      <span class="text-xs font-bold text-neutral-700">${b.pct}%</span>
+    </div>`).join('');
+}
+
+function renderBudgetBreakdown() {
+  const income = state.profile?.income || 0;
+  document.getElementById('budgetBreakdown').innerHTML = activeBuckets.map(b => {
+    const dollars = (income * b.pct / 100);
+    return `
+      <div class="card-sm text-center">
+        <p class="text-xs text-neutral-400">${b.label}</p>
+        <p class="text-lg font-bold mt-1" style="color:${b.color}">${fmt(dollars)}</p>
+        <p class="text-xs text-neutral-300">${b.pct}% of income</p>
+      </div>`;
+  }).join('');
+
+  // Coach tip
+  const fixed = activeBuckets.find(b => b.key === 'fixed' || b.key === 'needs');
+  const inv   = activeBuckets.find(b => b.key === 'invest' || b.key === 'savings');
+  let tip = '';
+  if (fixed && fixed.pct > 60)
+    tip = '⚠️ Your fixed costs are above 60%. Look for ways to reduce them — this is the biggest lever you have for financial flexibility.';
+  else if (inv && inv.pct < 10)
+    tip = '💡 Ramit recommends investing at least 10% of take-home. Even small increases now have massive compounding impact over 20–30 years.';
+  else
+    tip = '✅ Your plan looks balanced. The key now is consistency — automate each category so you don\'t rely on willpower.';
+  document.getElementById('budgetCoachTip').textContent = tip;
+}
+
+function saveBudget() {
+  const total = activeBuckets.reduce((s, b) => s + (b.pct || 0), 0);
+  if (total !== 100) { alert('Your budget must add up to exactly 100%.'); return; }
+  state.budget = { buckets: activeBuckets };
+  saveState();
+  updateNavLocks();
+  switchTab('invest');
+}
+
+// ════════════════════════════════════════════════
+// INVESTMENT STEPS
+// ════════════════════════════════════════════════
+
+const INVEST_STEPS = [
+  {
+    id: 's1',
+    title: '① Capture the free money — 401(k) match',
+    icon: '💸',
+    summary: "Your employer's 401(k) match is an instant 50–100% return on your money. It's the only guaranteed return in investing.",
+    action: 'Increase your 401(k) contribution to at least capture the full employer match.',
+    quote: '"The 401(k) match is the single best investment most people have access to." — Ramit Sethi',
+    depends: null,
+  },
+  {
+    id: 's2',
+    title: '② Build your emergency fund',
+    icon: '🛡️',
+    summary: 'A 3–6 month cash reserve prevents small crises from becoming financial disasters. This is your permission to invest without fear.',
+    action: 'Open a high-yield savings account and automate monthly deposits until you hit 3–6 months of expenses.',
+    quote: '"The most important financial variable is your ability to endure a bad month." — Morgan Housel',
+    depends: null,
+  },
+  {
+    id: 's3',
+    title: '③ Eliminate high-interest debt',
+    icon: '🔥',
+    summary: 'Paying off 20% APR credit card debt is a guaranteed 20% return. No investment reliably beats that.',
+    action: 'List all debts above 7% APR. Attack the highest rate first (avalanche method) or smallest balance first for momentum (snowball).',
+    quote: '"Debt is the enemy of wealth." — Chinkee Tan',
+    depends: null,
+  },
+  {
+    id: 's4',
+    title: '④ Fund retirement accounts',
+    icon: '🏦',
+    summary: 'Roth IRA: tax-free growth, no RMDs, flexible. Max it out ($7,000/year in 2025) before investing in taxable accounts.',
+    action: 'Open a Roth IRA (Fidelity, Vanguard, or Schwab). Set up an automatic monthly contribution of $583.',
+    quote: '"The best time to invest was yesterday. The second best time is today." — Napoleon Hill',
+    depends: 's2',
+  },
+  {
+    id: 's5',
+    title: '⑤ Max your 401(k) contributions',
+    icon: '📈',
+    summary: "After the Roth IRA is funded, push your 401(k) higher. The 2025 limit is $23,500. Pre-tax contributions reduce your taxable income today.",
+    action: 'Increase your 401(k) contribution percentage. Aim for $1,958/month if you want to max it in 2025.',
+    quote: '"Automate your investments. Don\'t rely on willpower — rely on systems." — Ramit Sethi',
+    depends: 's4',
+  },
+  {
+    id: 's6',
+    title: '⑥ Start taxable investing',
+    icon: '🌐',
+    summary: 'Once retirement accounts are funded, open a taxable brokerage account. Invest in diversified low-cost index funds.',
+    action: 'Open a brokerage account. Start with VTI (total US market) + VXUS (international). Automate monthly purchases.',
+    quote: '"Wealth is the result of time, not brilliance." — Morgan Housel',
+    depends: 's5',
+  },
+];
+
+function renderInvestSteps() {
+  const p = state.profile;
+  document.getElementById('investSteps').innerHTML = INVEST_STEPS.map((step, i) => {
+    const done = state.investSteps[step.id];
+    let status = 'active';
+    if (done) status = 'done';
+
+    return `
+      <div class="invest-step ${status} fade-in">
+        <div class="flex items-start gap-4">
+          <div class="text-2xl flex-shrink-0">${step.icon}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-3 flex-wrap">
+              <h3 class="text-sm font-bold">${step.title}</h3>
+              ${done ? '<span class="chip bg-green-100 text-green-700">✓ Done</span>' : ''}
+            </div>
+            <p class="text-xs text-neutral-500 mt-1.5 leading-relaxed">${step.summary}</p>
+            <div class="mt-2.5 p-2.5 bg-black/5 rounded-lg">
+              <p class="text-xs font-semibold text-neutral-700">Action:</p>
+              <p class="text-xs text-neutral-600 mt-0.5 leading-relaxed">${step.action}</p>
+            </div>
+            <p class="text-xs text-neutral-400 italic mt-2">${step.quote}</p>
+            ${!done ? `<button onclick="markInvestStep('${step.id}')" class="btn btn-sm btn-teal mt-3">Mark as done ✓</button>` : `<button onclick="unmarkInvestStep('${step.id}')" class="btn btn-sm btn-outline mt-3">Undo</button>`}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function markInvestStep(id) {
+  state.investSteps[id] = true;
+  saveState();
+  renderInvestSteps();
+}
+function unmarkInvestStep(id) {
+  state.investSteps[id] = false;
+  saveState();
+  renderInvestSteps();
+}
+
+// ════════════════════════════════════════════════
+// FINANCIAL ANALYZER
+// ════════════════════════════════════════════════
+
+const CAT_RULES = [
+  { cat:'Housing',       color:'#6366f1', keys:['rent','mortgage','hoa','property','lease'] },
+  { cat:'Dining Out',    color:'#ef4444', keys:['restaurant','cafe','coffee','doordash','grubhub','ubereats','chipotle','mcdonald','burger','pizza','sushi','dining','dine','chick'] },
+  { cat:'Groceries',     color:'#22c55e', keys:['walmart','target','costco','kroger','safeway','trader joe','whole foods','grocery','sprouts','publix','aldi','market'] },
+  { cat:'Transportation',color:'#f59e0b', keys:['gas','fuel','chevron','shell','bp','exxon','mobile','valero','uber','lyft','parking','toll','transit','mta','bart','auto'] },
+  { cat:'Subscriptions', color:'#8b5cf6', keys:['netflix','spotify','hulu','disney','amazon prime','youtube','apple','subscription','membership','claude','chatgpt','audible'] },
+  { cat:'Shopping',      color:'#ec4899', keys:['amazon','ebay','best buy','macy','nordstrom','h&m','zara','shein','online','shop','store','retail'] },
+  { cat:'Health',        color:'#14b8a6', keys:['gym','fitness','doctor','pharmacy','cvs','walgreens','rite aid','medical','dental','health','hospital','clinic','vision'] },
+  { cat:'Entertainment', color:'#06b6d4', keys:['movie','theater','game','bowling','concert','event','ticket','amc','regal','netflix','hulu','disney'] },
+  { cat:'Travel',        color:'#3b82f6', keys:['flight','hotel','airbnb','airline','delta','united','marriott','hilton','hyatt','booking','travel','vacation','trip','expedia'] },
+  { cat:'Giving',        color:'#f97316', keys:['church','donation','charity','tithe','giving','foundation','nonprofit'] },
+  { cat:'Education',     color:'#84cc16', keys:['school','tuition','udemy','coursera','books','course','college','university','student'] },
+];
+
+function categorize(desc) {
+  const d = desc.toLowerCase();
+  for (const rule of CAT_RULES) {
+    if (rule.keys.some(k => d.includes(k))) return rule.cat;
+  }
+  return 'Other';
+}
+
+function initAnalyzeTab() {
+  const zone = document.getElementById('analyzeDropZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) parseAnalyzeFile(file);
+  });
+}
+
+function analyzeCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  parseAnalyzeFile(file);
+}
+
+function parseAnalyzeFile(file) {
+  Papa.parse(file, {
+    header: true, skipEmptyLines: true,
+    transformHeader: h => h.trim().toLowerCase(),
+    complete: ({ data, meta }) => {
+      const fields = meta.fields || [];
+      const dateF  = fields.find(f => /date|posted/i.test(f));
+      const descF  = fields.find(f => /desc|merchant|name|memo/i.test(f));
+      const amtF   = fields.find(f => /amount|debit|charge|withdrawal/i.test(f));
+
+      if (!dateF || !descF || !amtF) {
+        alert('Could not read this CSV. Please make sure it has date, description, and amount columns.');
+        return;
+      }
+
+      const txs = data
+        .map(row => {
+          const raw = row[amtF]?.replace(/[$,\s]/g, '').replace(/[()]/g, '-') || '0';
+          const amt = parseFloat(raw);
+          const date = new Date(row[dateF]);
+          if (!isFinite(amt) || isNaN(date)) return null;
+          const spend = amt < 0 ? Math.abs(amt) : amt;
+          return { date, desc: row[descF] || '', amount: spend, cat: categorize(row[descF] || '') };
+        })
+        .filter(t => t && t.amount > 0 && t.amount < 20000);
+
+      if (!txs.length) { alert('No valid transactions found.'); return; }
+      runAnalysis(txs);
+    },
+    error: () => alert('Error reading the file. Make sure it\'s a valid CSV.'),
+  });
+}
+
+function runAnalysis(txs) {
+  const income   = state.profile?.income || 0;
+  const dates    = txs.map(t => t.date);
+  const minDate  = new Date(Math.min(...dates));
+  const maxDate  = new Date(Math.max(...dates));
+  const months   = Math.max(1, Math.round((maxDate - minDate) / (30.44 * 86400000)) + 1);
+  const total    = txs.reduce((s, t) => s + t.amount, 0);
+  const monthAvg = total / months;
+
+  // Category totals
+  const catMap = {};
+  txs.forEach(t => { catMap[t.cat] = (catMap[t.cat] || 0) + t.amount; });
+  const cats = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+
+  // Key ratios
+  const fixedCats   = ['Housing','Transportation'];
+  const fixedTotal  = cats.filter(([c]) => fixedCats.includes(c)).reduce((s,[,v]) => s+v, 0);
+  const fixedRatio  = income ? fixedTotal / (income * months) : 0;
+  const savingsRate = income ? Math.max(0, (income * months - total) / (income * months)) : 0;
+
+  // Grade
+  let score = 70;
+  if (fixedRatio <= 0.50)       score += 15;
+  else if (fixedRatio <= 0.60)  score += 5;
+  else if (fixedRatio > 0.70)   score -= 20;
+  if (savingsRate >= 0.20)      score += 15;
+  else if (savingsRate >= 0.10) score += 5;
+  else if (savingsRate < 0.05)  score -= 20;
+  score = Math.max(0, Math.min(100, score));
+  const grade = score >= 90 ? 'A' : score >= 75 ? 'B' : score >= 60 ? 'C' : score >= 40 ? 'D' : 'F';
+
+  renderAnalysisResults(grade, score, total, months, monthAvg, income, fixedRatio, savingsRate, cats, minDate, maxDate);
+}
+
+const GRADE_META = {
+  A: { color:'#10b981', bg:'#f0fdf4', title:'Excellent — You\'re thriving!', sub:'Your spending habits are well-aligned with long-term wealth building. Stay consistent.' },
+  B: { color:'#22c55e', bg:'#f7fef5', title:'Good — Solid foundation', sub:'You\'re doing well with a few areas to tighten. Keep refining.' },
+  C: { color:'#f59e0b', bg:'#fffbeb', title:'Fair — Room to grow', sub:'Stable but inconsistent. Some structural changes would significantly improve your position.' },
+  D: { color:'#f97316', bg:'#fff7ed', title:'Needs attention', sub:'High fixed costs or low savings are limiting your financial progress. Time for honest review.' },
+  F: { color:'#ef4444', bg:'#fef2f2', title:'Critical — Take action now', sub:'Spending may exceed income or savings rate is zero. Start with Rule 3 and Rule 8.' },
+};
+
+function renderAnalysisResults(grade, score, total, months, monthAvg, income, fixedRatio, savingsRate, cats, minDate, maxDate) {
+  document.getElementById('analyzeUpload').classList.add('hidden');
+  const res  = document.getElementById('analyzeResults');
+  res.classList.remove('hidden');
+
+  const meta = GRADE_META[grade];
+  const gradeEl = document.getElementById('gradeDisplay');
+  gradeEl.textContent   = grade;
+  gradeEl.style.background  = meta.bg;
+  gradeEl.style.color        = meta.color;
+  gradeEl.style.border       = `3px solid ${meta.color}`;
+  document.getElementById('gradeTitle').textContent    = meta.title;
+  document.getElementById('gradeSubtitle').textContent = meta.sub;
+
+  const fmt2 = d => d.toLocaleDateString('en-US', { month:'short', year:'numeric' });
+  document.getElementById('analyzePeriod').textContent  = `${fmt2(minDate)} – ${fmt2(maxDate)} (${months} mo)`;
+  document.getElementById('analyzeMonthAvg').textContent = fmt(monthAvg);
+
+  // Metrics
+  document.getElementById('analyzeMetrics').innerHTML = [
+    { label:'Total Spent',    val:fmt(total),                        color:'#374151' },
+    { label:'Fixed Cost Ratio', val:`${(fixedRatio*100).toFixed(0)}%`,  color: fixedRatio>0.60?'#ef4444':'#10b981' },
+    { label:'Savings Rate',   val:`${(savingsRate*100).toFixed(0)}%`,  color: savingsRate<0.10?'#ef4444':'#10b981' },
+    { label:'Monthly Income', val: income ? fmt(income) : 'Not set',  color:'#374151' },
+  ].map(m => `
+    <div class="card-sm text-center">
+      <p class="text-xs text-neutral-400">${m.label}</p>
+      <p class="text-base font-bold mt-1" style="color:${m.color}">${m.val}</p>
+    </div>`).join('');
+
+  // Categories
+  const maxAmt = cats[0]?.[1] || 1;
+  document.getElementById('analyzeCats').innerHTML = cats.map(([cat, amt]) => {
+    const rule  = CAT_RULES.find(r => r.cat === cat);
+    const color = rule?.color || '#94a3b8';
+    const mo    = amt / months;
+    return `
+      <div class="flex items-center gap-3">
+        <span class="text-xs w-28 flex-shrink-0 font-medium text-neutral-700">${cat}</span>
+        <div class="cat-bar flex-1"><div class="cat-fill" style="width:${(amt/maxAmt)*100}%;background:${color}"></div></div>
+        <span class="text-xs font-semibold w-16 text-right flex-shrink-0">${fmt(mo)}/mo</span>
+      </div>`;
+  }).join('');
+
+  // Coaching insights
+  const insights = buildCoachingInsights(grade, fixedRatio, savingsRate, cats, monthAvg, income, months);
+  document.getElementById('coachingInsights').innerHTML = insights.map(i => `
+    <div class="p-3 rounded-xl border ${i.type === 'warn' ? 'border-red-100 bg-red-50' : i.type === 'good' ? 'border-green-100 bg-green-50' : 'border-amber-100 bg-amber-50'}">
+      <p class="text-xs font-semibold ${i.type === 'warn' ? 'text-red-700' : i.type === 'good' ? 'text-green-700' : 'text-amber-700'} mb-1">${i.title}</p>
+      <p class="text-xs ${i.type === 'warn' ? 'text-red-600' : i.type === 'good' ? 'text-green-600' : 'text-amber-600'} leading-relaxed">${i.body}</p>
+      ${i.source ? `<p class="text-[11px] mt-1 italic opacity-60">— ${i.source}</p>` : ''}
+    </div>`).join('');
+
+  // Next steps
+  const actions = buildNextSteps(grade, fixedRatio, savingsRate, cats, income);
+  document.getElementById('nextSteps').innerHTML = actions.map((a, i) => `
+    <div class="flex gap-3 items-start">
+      <span class="w-6 h-6 rounded-full bg-teal-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">${i+1}</span>
+      <p class="text-sm text-white/80 leading-relaxed">${a}</p>
+    </div>`).join('');
+}
+
+function buildCoachingInsights(grade, fixedRatio, savingsRate, cats, monthAvg, income, months) {
+  const insights = [];
+  const dine = cats.find(([c]) => c === 'Dining Out');
+  const subs = cats.find(([c]) => c === 'Subscriptions');
+
+  if (fixedRatio > 0.60)
+    insights.push({ type:'warn', title:'Fixed costs are too high (' + (fixedRatio*100).toFixed(0) + '% of income)', body:'Ramit Sethi considers high fixed costs the #1 source of financial stress. Look for ways to reduce housing or car costs — even a $200/mo reduction compounds to $72,000 over 30 years.', source:'Ramit Sethi, I Will Teach You to Be Rich' });
+  else
+    insights.push({ type:'good', title:'Fixed cost ratio is healthy', body:'Keeping fixed costs under 60% gives you breathing room to invest, save, and enjoy guilt-free spending. This is one of the most important financial habits you can maintain.', source:'Ramit Sethi' });
+
+  if (savingsRate < 0.10)
+    insights.push({ type:'warn', title:'Savings rate is critically low (' + (savingsRate*100).toFixed(0) + '%)', body:'Your savings rate is the most powerful lever in your financial life. Morgan Housel found that increasing savings rate by even 5% has a more dramatic impact on wealth than chasing higher investment returns.', source:'Morgan Housel, The Psychology of Money' });
+  else if (savingsRate >= 0.20)
+    insights.push({ type:'good', title:'Excellent savings rate (' + (savingsRate*100).toFixed(0) + '%)', body:'You\'re building wealth at a meaningful pace. Napoleon Hill called the habit of systematic saving one of the 17 key principles of personal achievement. Stay the course.', source:'Napoleon Hill, Think and Grow Rich' });
+  else
+    insights.push({ type:'neutral', title:'Savings rate is okay but can improve (' + (savingsRate*100).toFixed(0) + '%)', body:'You\'re saving something — that\'s the foundation. The goal is 15–20% or more. Even automating an extra $100/month today will significantly impact your financial position in 10 years.', source:'Morgan Housel' });
+
+  if (dine && dine[1] / months > 600)
+    insights.push({ type:'neutral', title:'Dining out spending is high', body:`You're spending about ${fmt(dine[1]/months)}/mo on dining. Chinkee Tan's advice: track it, don't eliminate it. Cooking just 3 more meals a week at home could free up $150–$250/month for investing.`, source:'Chinkee Tan' });
+
+  if (subs && subs[1] / months > 100)
+    insights.push({ type:'neutral', title:'Subscription creep detected', body:`Subscriptions total ~${fmt(subs[1]/months)}/mo. Audit them: cancel anything unused or that doesn't actively improve your life. Every $15 subscription saved is $180/year that could be invested.`, source:'Ramit Sethi' });
+
+  if (grade === 'A' || grade === 'B')
+    insights.push({ type:'good', title:'Your behavior matches your values', body:'The Psychology of Money\'s central message: behavior beats intelligence in building wealth. You\'re consistently making good financial decisions — this compounds dramatically over time.', source:'Morgan Housel, The Psychology of Money' });
+
+  return insights;
+}
+
+function buildNextSteps(grade, fixedRatio, savingsRate, cats, income) {
+  const steps = [];
+  if (fixedRatio > 0.60) steps.push('Review your fixed costs. Could you refinance, negotiate, or eventually move to reduce housing or car costs?');
+  if (savingsRate < 0.10) steps.push('Set up an automatic transfer to savings the day you get paid. Start with even $50/month — the habit matters more than the amount.');
+  if (savingsRate < 0.15) steps.push('Go to the Invest tab and work through the 6-step investment roadmap — especially capturing your 401(k) match.');
+  if (grade === 'C' || grade === 'D' || grade === 'F') steps.push('Visit My Budget tab and choose a spending framework. Compare your actual spending to your targets and identify your biggest category to cut first.');
+  if (steps.length < 3) steps.push('Continue uploading statements monthly to track your progress. Wealth is built through consistent behavior over years, not perfect decisions.');
+  if (steps.length < 3) steps.push('Review your Dream Life goals. Ask yourself: "Is this purchase moving me toward or away from the life I described?"');
+  return steps.slice(0, 3);
+}
+
+function resetAnalyze() {
+  document.getElementById('analyzeUpload').classList.remove('hidden');
+  document.getElementById('analyzeResults').classList.add('hidden');
+  document.getElementById('analyzeFile').value = '';
+}
+
+// ════════════════════════════════════════════════
+// UTILITIES
+// ════════════════════════════════════════════════
+
+function fmt(n) {
+  return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+
+// Restore setup wizard state
+if (state.profile) {
+  // Pre-fill setup fields if profile exists
+  setTimeout(() => {
+    const p = state.profile;
+    if (document.getElementById('p-name')) document.getElementById('p-name').value = p.name || '';
+    if (document.getElementById('p-income')) document.getElementById('p-income').value = p.income || '';
+  }, 100);
+}
+
+// Restore dream life
+if (state.dreamLife) {
+  const d = state.dreamLife;
+  setTimeout(() => {
+    if (d.path) selectPath(d.path);
+    ['tuesday','moreon','stop'].forEach(k => { const el = document.getElementById(`d-${k}`); if (el) el.value = d[k] || ''; });
+    ['1yr','3yr','10yr'].forEach((k, i) => { const el = document.getElementById(`d-${['1yr','3yr','10yr'][i]}`); if (el && el) el.value = d[['yr1','yr3','yr10'][i]] || ''; });
+  }, 100);
+}
+
+// Restore step wizard
+goStep(state.profile ? 1 : (state.setupStep || 1));
+if (state.profile) {
+  for (let i = 1; i <= 4; i++) document.getElementById(`step-${i}`)?.classList.add('hidden');
+  document.getElementById('step-done')?.classList.remove('hidden');
+  document.getElementById('stepIndicators').innerHTML = '';
+  if (document.getElementById('doneNameDisplay')) document.getElementById('doneNameDisplay').textContent = state.profile.name;
+}
+
+updateNavLocks();
+switchTab(state.currentTab || 'home');
+</script>
+</body>
+</html>
