@@ -1719,9 +1719,9 @@
       <div class="wrap">
         <div class="text-center mb-8">
           <div class="eyebrow">Principles drawn from</div>
-          <h2 class="section-title" style="margin-inline:auto">The World's Best Financial Minds</h2>
+          <h2 class="section-title" style="margin-inline:auto" id="guru-section-title">The World's Best Financial Minds</h2>
         </div>
-        <div class="guru-grid">
+        <div class="guru-grid" id="guru-grid">
           <div class="guru-card">
             <div class="guru-icon">💼</div>
             <div class="guru-name">Ramit Sethi</div>
@@ -1743,9 +1743,21 @@
           <div class="guru-card">
             <div class="guru-icon">🌟</div>
             <div class="guru-name">Chinkee Tan</div>
-            <p class="guru-quote">"Real financial freedom comes not from how much you earn — but how well you manage
-              it."</p>
+            <p class="guru-quote">"Real financial freedom comes not from how much you earn — but how well you manage it."</p>
             <span class="badge badge-warn">Intentionality</span>
+          </div>
+          <!-- PH-only guru cards — shown via renderHomeProgress() -->
+          <div class="guru-card ph-only" style="display:none">
+            <div class="guru-icon">📗</div>
+            <div class="guru-name">Fitz Villafuerte</div>
+            <p class="guru-quote">"Hindi kailangan ng malaking puhunan para mamuhunan. Kailangan mo lang magsimula."</p>
+            <span class="badge badge-ok">Ready to be Rich</span>
+          </div>
+          <div class="guru-card ph-only" style="display:none">
+            <div class="guru-icon">✝️</div>
+            <div class="guru-name">Bo Sanchez</div>
+            <p class="guru-quote">"The Truly Rich Man doesn't worry about money. Because he has systems that make money work for him while he sleeps."</p>
+            <span class="badge badge-gold">Truly Rich Club</span>
           </div>
         </div>
       </div>
@@ -2261,15 +2273,8 @@
         <h3 style="font-family:var(--font-d);font-size:1.0625rem;margin-bottom:.75rem">🤖 Automation Roadmap</h3>
         <p class="text-muted mb-4" style="font-size:.8125rem">Ramit's system: automate everything on payday so your
           behavior can't sabotage your plan.</p>
-        <div class="grid-2">
-          <div class="coach-block coach-info" style="margin:0"><strong>Day 1 (Payday):</strong> Auto-transfer to 401(k)
-            + Roth IRA</div>
-          <div class="coach-block coach-ok" style="margin:0"><strong>Day 2:</strong> Auto-transfer to Emergency Fund
-            savings</div>
-          <div class="coach-block coach-neutral" style="margin:0"><strong>Day 3–5:</strong> Fixed bills auto-pay (rent,
-            utilities, insurance)</div>
-          <div class="coach-block coach-warn" style="margin:0"><strong>Remainder:</strong> Guilt-free spending — no
-            tracking needed</div>
+        <div class="grid-2" id="automation-roadmap-grid">
+          <!-- filled by renderAutomationRoadmap() when budget tab loads -->
         </div>
       </div>
     </div>
@@ -2316,9 +2321,7 @@
       <div id="invest-panel-basics" class="hidden space-y-3">
         <div class="card">
           <h4 style="font-weight:700;font-size:.875rem;margin-bottom:.375rem">📌 Index funds over stock picking</h4>
-          <p class="text-muted" style="font-size:.8125rem;line-height:1.6">Morgan Housel: "Most investors would be
-            better off buying a total market index fund and never looking at it again." VTI, FXAIX, VTSAX are your
-            friends.</p>
+          <p class="text-muted" style="font-size:.8125rem;line-height:1.6" id="index-fund-tip">Morgan Housel: "Most investors would be better off buying a total market index fund and never looking at it again." VTI, FXAIX, VTSAX are your friends.</p>
         </div>
         <div class="card">
           <h4 style="font-weight:700;font-size:.875rem;margin-bottom:.375rem">📌 Time in market beats timing the market
@@ -2537,9 +2540,7 @@
             <div style="flex:1;min-width:200px">
               <h3 style="font-family:var(--font-d);font-size:1rem;margin-bottom:.25rem">Off-Statement Monthly
                 Allocations</h3>
-              <p style="font-size:.75rem;color:var(--muted);line-height:1.6">These don't appear in your CSV — 401(k)
-                payroll deductions, IRA transfers, savings account deposits, and extra debt payments. Entering them
-                gives you an accurate savings rate and grade.</p>
+              <p style="font-size:.75rem;color:var(--muted);line-height:1.6" id="off-stmt-desc">These don't appear in your CSV — 401(k) payroll deductions, IRA transfers, savings account deposits, and extra debt payments. Entering them gives you an accurate savings rate and grade.</p>
             </div>
           </div>
           <div
@@ -2547,11 +2548,10 @@
             <div>
               <label style="font-size:.6875rem;font-weight:600;color:var(--muted);display:block;margin-bottom:.375rem">
                 Investments / month
-                <span style="display:block;font-weight:400;font-size:.625rem;margin-top:.125rem">401(k), IRA, brokerage
-                  auto-invest</span>
+                <span style="display:block;font-weight:400;font-size:.625rem;margin-top:.125rem" id="off-invest-sub">401(k), IRA, brokerage auto-invest</span>
               </label>
               <div style="display:flex;align-items:center;gap:.25rem">
-                <span style="color:var(--muted);font-size:.875rem">$</span>
+                <span style="color:var(--muted);font-size:.875rem" class="currency-sym">$</span>
                 <input type="number" id="manual-invest" min="0" step="50" placeholder="0"
                   style="flex:1;padding:.4375rem .625rem;border:1px solid var(--border);border-radius:var(--r);font-size:.875rem;background:var(--surface-off);color:var(--text);outline:none;font-variant-numeric:tabular-nums">
               </div>
@@ -2563,7 +2563,7 @@
                   savings account</span>
               </label>
               <div style="display:flex;align-items:center;gap:.25rem">
-                <span style="color:var(--muted);font-size:.875rem">$</span>
+                <span style="color:var(--muted);font-size:.875rem" class="currency-sym">$</span>
                 <input type="number" id="manual-savings" min="0" step="50" placeholder="0"
                   style="flex:1;padding:.4375rem .625rem;border:1px solid var(--border);border-radius:var(--r);font-size:.875rem;background:var(--surface-off);color:var(--text);outline:none;font-variant-numeric:tabular-nums">
               </div>
@@ -2575,7 +2575,7 @@
                   card, loans</span>
               </label>
               <div style="display:flex;align-items:center;gap:.25rem">
-                <span style="color:var(--muted);font-size:.875rem">$</span>
+                <span style="color:var(--muted);font-size:.875rem" class="currency-sym">$</span>
                 <input type="number" id="manual-debt" min="0" step="50" placeholder="0"
                   style="flex:1;padding:.4375rem .625rem;border:1px solid var(--border);border-radius:var(--r);font-size:.875rem;background:var(--surface-off);color:var(--text);outline:none;font-variant-numeric:tabular-nums">
               </div>
@@ -2829,6 +2829,7 @@
     const DEFAULT_STATE = {
       profile: null, dreamLife: null, budget: null, lastAnalysis: null,
       investSteps: { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false },
+      investActions: {},
       setupStep: 1, currentTab: 'home', mentor: null, manualAdjustments: null,
     };
     let state = { ...DEFAULT_STATE };
@@ -3096,7 +3097,7 @@
       if (id === 'home')    renderHomeProgress();
       if (id === 'budget')  initBudgetTab();
       if (id === 'invest')  renderInvestSteps();
-      if (id === 'analyze') initAnalyzeTab();
+      if (id === 'analyze') { updateCurrencySymbols(); initAnalyzeTab(); }
       if (id === 'summary') initSummaryTab();
       updateNavLocks();
     }
@@ -3353,8 +3354,31 @@
     function initBudgetTab() {
       const income = state.profile?.income || 0;
       document.getElementById('budgetIncomeDisplay').textContent = fmt(income);
+      renderAutomationRoadmap();
       if (state.budget) restoreBudget();
       else loadTemplate('ramit');
+    }
+
+    function renderAutomationRoadmap() {
+      const grid = document.getElementById('automation-roadmap-grid');
+      if (!grid) return;
+      const isPH = state.profile?.country === 'ph';
+      const items = isPH
+        ? [
+            { cls: 'coach-info',    label: 'Day 1 (Payday):', text: 'Auto-transfer to MP2 + GInvest / UITF' },
+            { cls: 'coach-ok',      label: 'Day 2:',          text: 'Auto-transfer to Emergency Fund (GoTyme / Maya)' },
+            { cls: 'coach-neutral', label: 'Day 3–5:',        text: 'Fixed bills auto-pay (rent, Meralco, internet, load)' },
+            { cls: 'coach-warn',    label: 'Remainder:',      text: 'Guilt-free spending — no tracking needed' },
+          ]
+        : [
+            { cls: 'coach-info',    label: 'Day 1 (Payday):', text: 'Auto-transfer to 401(k) + Roth IRA' },
+            { cls: 'coach-ok',      label: 'Day 2:',          text: 'Auto-transfer to Emergency Fund savings' },
+            { cls: 'coach-neutral', label: 'Day 3–5:',        text: 'Fixed bills auto-pay (rent, utilities, insurance)' },
+            { cls: 'coach-warn',    label: 'Remainder:',      text: 'Guilt-free spending — no tracking needed' },
+          ];
+      grid.innerHTML = items.map(it =>
+        `<div class="coach-block ${it.cls}" style="margin:0"><strong>${it.label}</strong> ${it.text}</div>`
+      ).join('');
     }
 
     // Philippines-specific overrides layered on top of any template
@@ -3573,10 +3597,16 @@
     function renderInvestSteps() {
       const isPH = state.profile?.country === 'ph';
       const steps = isPH ? PH_INVEST_STEPS : INVEST_STEPS;
+      const tipEl = document.getElementById('index-fund-tip');
+      if (tipEl) tipEl.innerHTML = isPH
+        ? 'Fitz Villafuerte: "Hindi kailangan ng malaking puhunan para mamuhunan. Kailangan mo lang magsimula." Sa Pilipinas, ang <strong>Equity UITFs</strong> at <strong>COL Financial EIP</strong> ang katumbas ng index fund investing.'
+        : 'Morgan Housel: "Most investors would be better off buying a total market index fund and never looking at it again." <strong>VTI, FXAIX, VTSAX</strong> are your friends.';
       document.getElementById('investSteps').innerHTML = steps.map((step, i) => {
         const done = state.investSteps[step.id];
+        const customAction = state.investActions?.[step.id];
+        const displayAction = customAction || step.action;
         return `
-      <div class="invest-step ${done ? 'done' : 'active-step'} fade-in">
+      <div class="invest-step ${done ? 'done' : 'active-step'} fade-in" id="istep-${step.id}">
         <div class="flex gap-4">
           <div style="font-size:1.5rem;flex-shrink:0;margin-top:2px">${step.icon}</div>
           <div style="flex:1;min-width:0">
@@ -3585,9 +3615,12 @@
               <span class="badge ${step.badgeClass}">${done ? '✓ Done' : step.badge}</span>
             </div>
             <p class="text-muted mb-3" style="font-size:.8125rem;line-height:1.6">${step.summary}</p>
-            <div class="card-offset" style="padding:.75rem;margin-bottom:.75rem">
-              <p style="font-size:.6875rem;font-weight:700;color:var(--text);margin-bottom:.25rem">Action:</p>
-              <p class="text-muted" style="font-size:.8125rem;line-height:1.55">${step.action}</p>
+            <div class="card-offset" style="padding:.75rem;margin-bottom:.75rem" id="action-block-${step.id}">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem">
+                <p style="font-size:.6875rem;font-weight:700;color:var(--text);margin:0">My Action Plan:</p>
+                <button onclick="editInvestAction('${step.id}')" title="Personalise this action" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.75rem;padding:2px 4px;border-radius:4px" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--muted)'">${customAction ? '✎ Edit' : '✎ Personalise'}</button>
+              </div>
+              <p class="text-muted" style="font-size:.8125rem;line-height:1.55" id="action-text-${step.id}">${displayAction}</p>
             </div>
             <p style="font-size:.8125rem;font-style:italic;color:var(--faint);margin-bottom:.75rem">${step.quote}</p>
             ${!done
@@ -3621,6 +3654,41 @@
 
     function markInvestStep(id) { state.investSteps[id] = true; saveState(); renderInvestSteps(); }
     function unmarkInvestStep(id) { state.investSteps[id] = false; saveState(); renderInvestSteps(); }
+
+    function editInvestAction(id) {
+      const block = document.getElementById('action-block-' + id);
+      if (!block) return;
+      const isPH = state.profile?.country === 'ph';
+      const steps = isPH ? PH_INVEST_STEPS : INVEST_STEPS;
+      const step = steps.find(s => s.id === id);
+      const current = state.investActions?.[id] || step?.action || '';
+      block.innerHTML = `
+        <p style="font-size:.6875rem;font-weight:700;color:var(--text);margin-bottom:.375rem">My Action Plan:</p>
+        <textarea id="action-edit-${id}" rows="4"
+          style="width:100%;padding:.5rem .625rem;border:1px solid var(--primary);border-radius:var(--r);font-size:.8125rem;line-height:1.55;background:var(--surface-off);color:var(--text);resize:vertical;font-family:inherit;box-sizing:border-box"
+          placeholder="Describe your specific plan — your broker, amounts, timeline…">${current}</textarea>
+        <div style="display:flex;gap:.5rem;margin-top:.5rem">
+          <button onclick="saveInvestAction('${id}')" class="btn btn-primary btn-sm">Save</button>
+          <button onclick="clearInvestAction('${id}')" class="btn btn-secondary btn-sm" style="font-size:.75rem">Reset to default</button>
+        </div>`;
+      document.getElementById('action-edit-' + id)?.focus();
+    }
+
+    function saveInvestAction(id) {
+      const val = document.getElementById('action-edit-' + id)?.value.trim();
+      if (!state.investActions) state.investActions = {};
+      if (val) state.investActions[id] = val;
+      else delete state.investActions[id];
+      saveState();
+      renderInvestSteps();
+    }
+
+    function clearInvestAction(id) {
+      if (!state.investActions) state.investActions = {};
+      delete state.investActions[id];
+      saveState();
+      renderInvestSteps();
+    }
 
     // ════════════════════════════════════════
     // ANALYZER
@@ -4485,7 +4553,10 @@
       const steps = [];
       if (fixedRatio > .60) steps.push('Review your fixed costs. Could you refinance, negotiate, or eventually move to reduce housing or car costs?');
       if (savingsRate < .10) steps.push('Set up an automatic transfer to savings on payday. Start with even $50/month — the habit matters more than the amount initially.');
-      if (savingsRate < .15) steps.push('Go to the Invest tab and work through the 6-step investment roadmap — especially capturing your 401(k) match first.');
+      const _isPH3 = state.profile?.country === 'ph';
+      if (savingsRate < .15) steps.push(_isPH3
+        ? 'Go to the Invest tab and work through the 6-step Philippine investment ladder — start by building your emergency fund, then open an MP2 account for tax-free ~7% returns.'
+        : 'Go to the Invest tab and work through the 6-step investment roadmap — especially capturing your 401(k) match first.');
       if (['C', 'D', 'F'].includes(grade)) steps.push('Visit My Budget tab and compare your actual spending to your targets. Identify your biggest category to cut first.');
       if (steps.length < 3) steps.push('Upload statements monthly to track progress. Wealth is built through consistent behavior over years, not perfect one-time decisions.');
       if (steps.length < 3) steps.push('Review your Dream Life goals. Ask: "Is this purchase moving me toward or away from the life I described?"');
@@ -4797,6 +4868,17 @@
     // UTILITIES
     // ════════════════════════════════════════
     function getCurrency() { return state.profile?.country === 'ph' ? '₱' : '$'; }
+    function updateCurrencySymbols() {
+      const sym = getCurrency();
+      const isPH = sym === '₱';
+      document.querySelectorAll('.currency-sym').forEach(el => el.textContent = sym);
+      const offDesc = document.getElementById('off-stmt-desc');
+      if (offDesc) offDesc.textContent = isPH
+        ? 'These don\'t appear in your CSV — SSS/PhilHealth/Pag-IBIG payroll deductions, MP2 transfers, savings deposits, and extra debt payments. Entering them gives you an accurate savings rate and grade.'
+        : 'These don\'t appear in your CSV — 401(k) payroll deductions, IRA transfers, savings account deposits, and extra debt payments. Entering them gives you an accurate savings rate and grade.';
+      const offInvSub = document.getElementById('off-invest-sub');
+      if (offInvSub) offInvSub.textContent = isPH ? 'MP2, UITF, COL Financial, GInvest' : '401(k), IRA, brokerage auto-invest';
+    }
     function fmt(n) { return getCurrency() + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
 
     // ════════════════════════════════════════
@@ -4851,6 +4933,12 @@
       const hasDream    = !!state.dreamLife;
       const hasBudget   = !!state.budget;
       const allDone     = hasProfile && hasDream && hasBudget;
+      const isPH        = state.profile?.country === 'ph';
+
+      // Show/hide PH guru cards
+      document.querySelectorAll('.ph-only').forEach(el => el.style.display = isPH ? '' : 'none');
+      const guruTitle = document.getElementById('guru-section-title');
+      if (guruTitle) guruTitle.textContent = isPH ? 'Filipino & World Financial Minds' : 'The World\'s Best Financial Minds';
 
       const progressCard  = document.getElementById('home-setup-progress');
       const summaryStrip  = document.getElementById('home-summary-strip');
