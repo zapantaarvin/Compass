@@ -4875,12 +4875,14 @@
         ins.push({ type: 'ok', title: `Excellent savings rate (${(savingsRate * 100).toFixed(0)}%)`, body: "You're building wealth at a meaningful pace. Napoleon Hill called systematic saving one of the 17 key principles of personal achievement. Stay the course.", source: 'Napoleon Hill, Think and Grow Rich' });
       else
         ins.push({ type: 'neutral', title: `Savings rate is okay, can improve (${(savingsRate * 100).toFixed(0)}%)`, body: "You're saving something — that's the foundation. The goal is 15–20%+. Even automating an extra $100/month today will significantly impact your position in 10 years.", source: 'Morgan Housel' });
-      if (dine && dine[1] / months > 600)
+      if (dine && dine[1] / months > 600) {
         const isPH = state.profile?.country === 'ph';
         ins.push({ type: 'neutral', title: 'Dining out spending is notable', body: isPH ? `You're spending ~${fmt(dine[1] / months)}/mo on dining. Swapping 3 takeout meals a week for lutong-bahay (home cooking) could free up ₱1,500–₱3,000/month for your MP2 or UITF.` : `You're spending ~${fmt(dine[1] / months)}/mo on dining. Track it, don't eliminate it. Cooking just 3 more meals a week at home could free up $150–$250/month for investing.`, source: 'Chinkee Tan' });
-      if (subs && subs[1] / months > 100)
-        const _isPH2 = state.profile?.country === 'ph';
-        ins.push({ type: 'neutral', title: 'Subscription creep detected', body: _isPH2 ? `Subscriptions total ~${fmt(subs[1] / months)}/mo. Audit them: cancel anything unused. Every ₱500/mo saved is ₱6,000/year that could go into your MP2 or GInvest account.` : `Subscriptions total ~${fmt(subs[1] / months)}/mo. Audit them: cancel anything unused or that doesn't actively improve your life. Every $15/mo saved is $180/year that could be invested.`, source: 'Ramit Sethi' });
+      }
+      if (subs && subs[1] / months > 100) {
+        const isPH2 = state.profile?.country === 'ph';
+        ins.push({ type: 'neutral', title: 'Subscription creep detected', body: isPH2 ? `Subscriptions total ~${fmt(subs[1] / months)}/mo. Audit them: cancel anything unused. Every ₱500/mo saved is ₱6,000/year that could go into your MP2 or GInvest account.` : `Subscriptions total ~${fmt(subs[1] / months)}/mo. Audit them: cancel anything unused or that doesn't actively improve your life. Every $15/mo saved is $180/year that could be invested.`, source: 'Ramit Sethi' });
+      }
       return ins;
     }
 
