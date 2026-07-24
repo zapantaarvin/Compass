@@ -1458,7 +1458,7 @@
       position: absolute;
       top: calc(100% + 8px);
       right: 0;
-      background: var(--card);
+      background: var(--surface-2);
       border: 1px solid var(--divider);
       border-radius: 10px;
       box-shadow: 0 8px 32px rgba(0,0,0,.18);
@@ -1489,7 +1489,7 @@
   <!-- NAV -->
   <!-- Income editor modal -->
   <div id="incomeModal" onclick="if(event.target===this)closeIncomeEditor()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem">
-    <div style="background:var(--card);border:1px solid var(--divider);border-radius:16px;padding:1.75rem;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="background:var(--surface-2);border:1px solid var(--divider);border-radius:16px;padding:1.75rem;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
       <h3 style="font-family:var(--font-d);font-size:1.125rem;margin-bottom:.25rem">Update Monthly Income</h3>
       <p style="font-size:.8125rem;color:var(--muted);margin-bottom:1.25rem">Your net take-home pay after taxes. Update this whenever your salary, bonus, or situation changes.</p>
       <label style="font-size:.8125rem;font-weight:600;display:block;margin-bottom:.375rem">Monthly take-home pay (after taxes)</label>
@@ -1504,7 +1504,7 @@
 
   <!-- Profile Settings modal -->
   <div id="profileSettingsModal" onclick="if(event.target===this)closeProfileSettings()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto">
-    <div style="background:var(--card);border:1px solid var(--divider);border-radius:16px;width:100%;max-width:520px;box-shadow:0 24px 64px rgba(0,0,0,.25);margin:auto">
+    <div style="background:var(--surface-2);border:1px solid var(--divider);border-radius:16px;width:100%;max-width:520px;box-shadow:0 24px 64px rgba(0,0,0,.25);margin:auto">
 
       <!-- Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--divider)">
@@ -3717,6 +3717,18 @@
     }
 
     // Philippines-specific overrides layered on top of any template
+    const PH_BUCKET_TIPS = {
+      invest:   'Automate your MP2 transfer every 15th (payday). Set up GCash GInvest or COL Financial auto-buy so you invest before you spend.',
+      savings:  'Build a ₱5,000–₱10,000 cash buffer first in a high-yield digital bank, then grow to 3 months of expenses. GoTyme, Maya, and Tonik offer 4–6% with no lock-in.',
+      fixed:    "Kahit 'fixed' costs ay puwedeng i-negotiate. Bawas ng ₱1,000/mo sa recurring costs = ₱12,000/yr para sa iyong MP2 o UITF.",
+      debt:     'Gamitin ang avalanche method: bayaran lahat ng minimum, ibuhos ang sobra sa pinakamataas na interest. Credit card 2%/mo = 24%/yr — walang investment na tatalo dito.',
+      savings_debt: 'Itago muna ang ₱5,000–₱10,000 bago mag-aggressive debt payoff. Kung walang emergency fund, ang bawat sira ng kotse o medical bill ay babalik sa credit card.',
+      guiltfree:'Ito ang intensyonal na gastos, hindi pagiging mapagwaldas. Kung naabot na ang investments at savings, enjoy na nang walang guilt — iyon ang punto ng sistema.',
+      needs:    'Maging tapat sa sarili: ang "needs" ay survival, hindi comfort. Ang Netflix ay "want." Mahal mang kumain sa labas ay "want" rin.',
+      wants:    '30% wants ay maluwag para may sustainability ang budget — huwag i-cut nang sobra o masisira ang plano.',
+      living:   'Ang pagbabawas ng lifestyle hanggang minimum ay kaya lang sa loob ng 12–24 buwan, hindi permanente. Mag-celebrate sa bawat utang na nababayaran.',
+    };
+
     const PH_BUCKET_EXAMPLES = {
       fixed:    ['Rent / condo amortization', 'Meralco (electricity)', 'Maynilad / Manila Water', 'PLDT, Globe, or Converge internet', 'Mobile postpaid plan or load', 'Transportation (MRT, Grab, gas, tricycle)', 'SSS + PhilHealth + Pag-IBIG (if self-employed)', 'Minimum credit card / loan payments'],
       invest:   ['MP2 (Modified Pag-IBIG II) — ₱500+/mo, ~7% tax-free', 'COL Financial EIP — ₱1,000+/mo in PSE stocks', 'GCash GInvest — ATRAM Equity Fund, starts ₱50', 'BDO / BPI / Metrobank UITF — Equity Fund', 'RTBs (Retail Treasury Bonds) via BTr — ₱5,000 min, ~6%/yr'],
@@ -3734,6 +3746,7 @@
       activeBuckets = tpl.buckets.map(b => ({
         ...b,
         examples: isPH && PH_BUCKET_EXAMPLES[b.key] ? PH_BUCKET_EXAMPLES[b.key] : b.examples,
+        tip: isPH && PH_BUCKET_TIPS[b.key] ? PH_BUCKET_TIPS[b.key] : b.tip,
       }));
       document.querySelectorAll('[data-tpl]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tpl === key);
@@ -3798,7 +3811,7 @@
             oninput="updateBucket(${i},this.value)" id="bucket-${i}">
           <span class="text-muted" style="font-size:.75rem">%</span>
         </div>
-        <div class="budget-amt" id="bamt-${i}">$${Math.round((state.profile?.income || 0) * b.pct / 100).toLocaleString()}/mo</div>
+        <div class="budget-amt" id="bamt-${i}">${getCurrency()}${Math.round((state.profile?.income || 0) * b.pct / 100).toLocaleString()}/mo</div>
       </div>
     </div>`).join('');
       updateBudgetTotal();
@@ -3853,7 +3866,8 @@
       const fixed = activeBuckets.find(b => b.key === 'fixed' || b.key === 'needs');
       const inv = activeBuckets.find(b => b.key === 'invest' || b.key === 'savings');
       let tip = '';
-      if (fixed && fixed.pct > 60) tip = '⚠️ Fixed costs above 60% are Ramit\'s #1 red flag. Look to reduce housing or car costs — even $200/mo saved compounds to $72K over 30 years.';
+      const _isPH = state.profile?.country === 'ph';
+      if (fixed && fixed.pct > 60) tip = _isPH ? '⚠️ Fixed costs above 60% ay red flag. Subukan bawasan ang upa o transportasyon — kahit ₱1,000/mo savings ay nagiging malaki sa paglipas ng panahon.' : '⚠️ Fixed costs above 60% are Ramit\'s #1 red flag. Look to reduce housing or car costs — even $200/mo saved compounds to $72K over 30 years.';
       else if (inv && inv.pct < 10) tip = '💡 Ramit recommends investing at least 10% of take-home. Even small increases now have massive compounding impact over 20–30 years.';
       else tip = '✅ Your plan looks balanced. The key now is consistency — automate each category so you don\'t rely on willpower.';
       document.getElementById('budgetCoachTip').textContent = tip;
@@ -4865,8 +4879,9 @@
       const ins = [];
       const dine = cats.find(([c]) => c === 'Dining Out');
       const subs = cats.find(([c]) => c === 'Subscriptions');
+      const _insIsPH = state.profile?.country === 'ph';
       if (fixedRatio > .60)
-        ins.push({ type: 'warn', title: `Fixed costs too high (${(fixedRatio * 100).toFixed(0)}% of income)`, body: 'Ramit Sethi considers high fixed costs the #1 source of financial stress. Look for ways to reduce housing or car costs — even $200/mo reduction compounds to $72,000 over 30 years.', source: 'Ramit Sethi, I Will Teach You to Be Rich' });
+        ins.push({ type: 'warn', title: `Fixed costs too high (${(fixedRatio * 100).toFixed(0)}% of income)`, body: _insIsPH ? 'Ang mataas na fixed costs ay isa sa pinakamalakas na hadlang sa wealth building. Subukan bawasan ang upa o transportasyon — kahit ₱1,000/mo reduction ay nagiging ₱360,000 sa 30 taon.' : 'Ramit Sethi considers high fixed costs the #1 source of financial stress. Look for ways to reduce housing or car costs — even $200/mo reduction compounds to $72,000 over 30 years.', source: 'Ramit Sethi, I Will Teach You to Be Rich' });
       else
         ins.push({ type: 'ok', title: 'Fixed cost ratio is healthy', body: 'Keeping fixed costs under 60% gives you breathing room to invest, save, and enjoy guilt-free spending. This is one of the most important habits you can maintain.', source: 'Ramit Sethi' });
       if (savingsRate < .10)
@@ -4874,7 +4889,7 @@
       else if (savingsRate >= .20)
         ins.push({ type: 'ok', title: `Excellent savings rate (${(savingsRate * 100).toFixed(0)}%)`, body: "You're building wealth at a meaningful pace. Napoleon Hill called systematic saving one of the 17 key principles of personal achievement. Stay the course.", source: 'Napoleon Hill, Think and Grow Rich' });
       else
-        ins.push({ type: 'neutral', title: `Savings rate is okay, can improve (${(savingsRate * 100).toFixed(0)}%)`, body: "You're saving something — that's the foundation. The goal is 15–20%+. Even automating an extra $100/month today will significantly impact your position in 10 years.", source: 'Morgan Housel' });
+        ins.push({ type: 'neutral', title: `Savings rate is okay, can improve (${(savingsRate * 100).toFixed(0)}%)`, body: _insIsPH ? "Nakakatipid ka na — maganda iyon. Ang target ay 15–20%+. Kahit dagdag na ₱500/buwan ngayon ay malaki ang epekto sa 10–20 taon dahil sa compounding." : "You're saving something — that's the foundation. The goal is 15–20%+. Even automating an extra $100/month today will significantly impact your position in 10 years.", source: 'Morgan Housel' });
       if (dine && dine[1] / months > 600) {
         const isPH = state.profile?.country === 'ph';
         ins.push({ type: 'neutral', title: 'Dining out spending is notable', body: isPH ? `You're spending ~${fmt(dine[1] / months)}/mo on dining. Swapping 3 takeout meals a week for lutong-bahay (home cooking) could free up ₱1,500–₱3,000/month for your MP2 or UITF.` : `You're spending ~${fmt(dine[1] / months)}/mo on dining. Track it, don't eliminate it. Cooking just 3 more meals a week at home could free up $150–$250/month for investing.`, source: 'Chinkee Tan' });
@@ -4889,7 +4904,8 @@
     function buildNextSteps(grade, fixedRatio, savingsRate, cats, income) {
       const steps = [];
       if (fixedRatio > .60) steps.push('Review your fixed costs. Could you refinance, negotiate, or eventually move to reduce housing or car costs?');
-      if (savingsRate < .10) steps.push('Set up an automatic transfer to savings on payday. Start with even $50/month — the habit matters more than the amount initially.');
+      const _nsIsPH = state.profile?.country === 'ph';
+      if (savingsRate < .10) steps.push(_nsIsPH ? 'Mag-set up ng automatic transfer sa savings tuwing sweldo. Magsimula kahit ₱500/buwan — ang ugali ay mas mahalaga kaysa halaga sa simula.' : 'Set up an automatic transfer to savings on payday. Start with even $50/month — the habit matters more than the amount initially.');
       const _isPH3 = state.profile?.country === 'ph';
       if (savingsRate < .15) steps.push(_isPH3
         ? 'Go to the Invest tab and work through the 6-step Philippine investment ladder — start by building your emergency fund, then open an MP2 account for tax-free ~7% returns.'
@@ -5294,7 +5310,7 @@
           const inc = state.profile?.income ? getCurrency() + state.profile.income.toLocaleString() + '/mo income' : null;
           const grade = state.lastAnalysis?.grade ? `Grade ${state.lastAnalysis.grade}` : null;
           const items = [inc, grade].filter(Boolean);
-          chips.innerHTML = items.map(t => `<span style="font-size:.8125rem;background:var(--card);border:1px solid var(--divider);border-radius:999px;padding:.25rem .75rem;font-weight:600">${t}</span>`).join('');
+          chips.innerHTML = items.map(t => `<span style="font-size:.8125rem;background:var(--surface-2);border:1px solid var(--divider);border-radius:999px;padding:.25rem .75rem;font-weight:600">${t}</span>`).join('');
         }
       } else {
         // In-progress setup — show progress card
