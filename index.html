@@ -1660,7 +1660,38 @@
   <!-- ═══════════════════════════════ HOME ═══════════════════════════════ -->
   <div id="tab-home" class="tab-section active">
 
-    <section class="hero">
+    <!-- Setup progress card — shown until all 3 setup steps done -->
+    <div id="home-setup-progress" style="display:none;background:var(--primary);color:#fff;padding:0">
+      <div class="wrap" style="padding-top:1.5rem;padding-bottom:1.5rem">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+          <div>
+            <div style="font-size:.75rem;font-weight:600;letter-spacing:.08em;opacity:.75;margin-bottom:.25rem" id="home-greeting">WELCOME</div>
+            <h2 style="font-family:var(--font-d);font-size:1.25rem;margin-bottom:.25rem;color:#fff" id="home-progress-title">Let's build your financial plan</h2>
+            <p style="font-size:.875rem;opacity:.85;margin-bottom:1rem" id="home-progress-sub">Complete 3 quick steps to unlock your personalized coaching dashboard.</p>
+            <div style="display:flex;gap:.625rem;flex-wrap:wrap" id="home-progress-steps">
+              <!-- filled by renderHomeProgress() -->
+            </div>
+          </div>
+          <button id="home-continue-btn" onclick="continueSetup()" class="btn" style="background:#fff;color:var(--primary);font-weight:700;white-space:nowrap;flex-shrink:0;align-self:center">Continue →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Returning-user summary strip — shown once setup is complete -->
+    <div id="home-summary-strip" style="display:none;background:var(--surface);border-bottom:1px solid var(--divider)">
+      <div class="wrap" style="padding-top:1rem;padding-bottom:1rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+        <div>
+          <span style="font-size:.75rem;color:var(--muted);font-weight:600;letter-spacing:.06em">WELCOME BACK</span>
+          <p style="font-size:1rem;font-weight:700;margin-top:.125rem" id="home-name-greet">—</p>
+        </div>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap" id="home-stat-chips">
+          <!-- filled by renderHomeProgress() -->
+        </div>
+        <button onclick="switchTab('analyze')" class="btn btn-primary" style="margin-left:auto;white-space:nowrap">View My Analysis →</button>
+      </div>
+    </div>
+
+    <section class="hero" id="home-hero">
       <div class="wrap-lg">
         <div class="hero-eyebrow">★ Your Financial North Star</div>
         <h1 class="hero-title">Build a life you love,<br><em>not a budget you hate.</em></h1>
@@ -3036,8 +3067,9 @@
       });
       state.currentTab = id;
       window.scrollTo(0, 0);
-      if (id === 'budget') initBudgetTab();
-      if (id === 'invest') renderInvestSteps();
+      if (id === 'home')    renderHomeProgress();
+      if (id === 'budget')  initBudgetTab();
+      if (id === 'invest')  renderInvestSteps();
       if (id === 'analyze') initAnalyzeTab();
       if (id === 'summary') initSummaryTab();
       updateNavLocks();
@@ -4669,7 +4701,86 @@
         if (document.getElementById('doneNameDisplay')) document.getElementById('doneNameDisplay').textContent = state.profile.name;
       }
       updateNavLocks();
-      switchTab(state.currentTab || 'home');
+
+      // First-time user (no profile yet) → send straight to setup
+      const isFirstTime = !state.profile && !state.currentTab || state.currentTab === 'home';
+      if (!state.profile && !state.lastAnalysis && !state.dreamLife) {
+        switchTab('setup');
+      } else {
+        switchTab(state.currentTab || 'home');
+      }
+
+      renderHomeProgress();
+    }
+
+    function renderHomeProgress() {
+      const hasProfile  = !!state.profile;
+      const hasDream    = !!state.dreamLife;
+      const hasBudget   = !!state.budget;
+      const allDone     = hasProfile && hasDream && hasBudget;
+
+      const progressCard  = document.getElementById('home-setup-progress');
+      const summaryStrip  = document.getElementById('home-summary-strip');
+      const hero          = document.getElementById('home-hero');
+
+      if (allDone) {
+        // Returning user — show summary strip, hide progress card, shrink hero
+        if (progressCard) progressCard.style.display = 'none';
+        if (summaryStrip) summaryStrip.style.display = 'block';
+        if (hero) hero.style.display = 'none';
+        const name = state.profile?.name?.split(' ')[0] || 'there';
+        const greet = document.getElementById('home-name-greet');
+        if (greet) greet.textContent = name;
+        const chips = document.getElementById('home-stat-chips');
+        if (chips) {
+          const inc = state.profile?.income ? '$' + state.profile.income.toLocaleString() + '/mo income' : null;
+          const grade = state.lastAnalysis?.grade ? `Grade ${state.lastAnalysis.grade}` : null;
+          const items = [inc, grade].filter(Boolean);
+          chips.innerHTML = items.map(t => `<span style="font-size:.8125rem;background:var(--card);border:1px solid var(--divider);border-radius:999px;padding:.25rem .75rem;font-weight:600">${t}</span>`).join('');
+        }
+      } else {
+        // In-progress setup — show progress card
+        if (progressCard) progressCard.style.display = 'block';
+        if (summaryStrip) summaryStrip.style.display = 'none';
+
+        const steps = [
+          { label: 'Profile',    done: hasProfile,  tab: 'setup'  },
+          { label: 'Dream Life', done: hasDream,     tab: 'dream'  },
+          { label: 'Budget',     done: hasBudget,    tab: 'budget' },
+        ];
+        const completed = steps.filter(s => s.done).length;
+
+        const greetEl = document.getElementById('home-greeting');
+        const titleEl = document.getElementById('home-progress-title');
+        const subEl   = document.getElementById('home-progress-sub');
+        const name    = state.profile?.name?.split(' ')[0];
+
+        if (greetEl) greetEl.textContent = name ? `WELCOME, ${name.toUpperCase()}` : 'WELCOME';
+        if (completed === 0) {
+          if (titleEl) titleEl.textContent = "Let's build your financial plan";
+          if (subEl)   subEl.textContent   = 'Complete 3 quick steps to unlock your personalized coaching dashboard.';
+        } else {
+          if (titleEl) titleEl.textContent = `${completed} of 3 steps complete`;
+          if (subEl)   subEl.textContent   = completed === 2 ? 'Almost there — finish your budget to unlock full coaching.' : 'Keep going — your plan is taking shape.';
+        }
+
+        const stepsEl = document.getElementById('home-progress-steps');
+        if (stepsEl) {
+          stepsEl.innerHTML = steps.map(s => `
+            <div style="display:flex;align-items:center;gap:.375rem;font-size:.8125rem;font-weight:600;opacity:${s.done ? '1' : '.65'}">
+              <span style="width:20px;height:20px;border-radius:50%;background:${s.done ? '#fff' : 'rgba(255,255,255,.25)'};color:${s.done ? 'var(--primary)' : '#fff'};display:flex;align-items:center;justify-content:center;font-size:.6875rem;flex-shrink:0">${s.done ? '✓' : '○'}</span>
+              ${s.label}
+            </div>
+          `).join('<span style="opacity:.4">·</span>');
+        }
+      }
+    }
+
+    function continueSetup() {
+      if (!state.profile)   { switchTab('setup');  return; }
+      if (!state.dreamLife) { switchTab('dream');  return; }
+      if (!state.budget)    { switchTab('budget'); return; }
+      switchTab('summary');
     }
 
     // Kick off auth check
