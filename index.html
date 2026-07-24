@@ -1933,9 +1933,9 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="p-country">Country / Region</label>
-          <select id="p-country" class="field">
-            <option value="us">United States</option>
-            <option value="ph">Philippines</option>
+          <select id="p-country" class="field" onchange="toggleCountryFields(this.value)">
+            <option value="us">United States 🇺🇸</option>
+            <option value="ph">Philippines 🇵🇭</option>
             <option value="other">Other</option>
           </select>
         </div>
@@ -1947,31 +1947,57 @@
         <div class="eyebrow">Step 2 of 4</div>
         <h3 style="font-family:var(--font-d);font-size:1.25rem">Your Income</h3>
         <div class="form-group">
-          <label class="form-label" for="p-income">Monthly take-home pay (after taxes)</label>
+          <label class="form-label" for="p-income" id="p-income-label">Monthly take-home pay (after taxes)</label>
           <input type="number" id="p-income" class="field" placeholder="e.g. 4500" min="0">
-          <span class="form-hint">Net pay — the amount that actually hits your bank account</span>
+          <span class="form-hint" id="p-income-hint">Net pay — the amount that actually hits your bank account</span>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="p-has401k">Do you have a 401(k) or employer retirement plan?</label>
-          <select id="p-has401k" class="field" onchange="toggle401k(this.value)">
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </select>
-        </div>
-        <div id="k401fields" class="hidden space-y-3">
-          <div class="grid-2">
-            <div class="form-group">
-              <label class="form-label" for="p-401contrib">Your contribution %</label>
-              <input type="number" id="p-401contrib" class="field" placeholder="e.g. 6" min="0" max="100">
+        <!-- US: 401(k) fields -->
+        <div id="us-retirement-fields">
+          <div class="form-group">
+            <label class="form-label" for="p-has401k">Do you have a 401(k) or employer retirement plan?</label>
+            <select id="p-has401k" class="field" onchange="toggle401k(this.value)">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div id="k401fields" class="hidden space-y-3">
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="p-401contrib">Your contribution %</label>
+                <input type="number" id="p-401contrib" class="field" placeholder="e.g. 6" min="0" max="100">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p-401match">Employer match %</label>
+                <input type="number" id="p-401match" class="field" placeholder="e.g. 3" min="0" max="100">
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="p-401match">Employer match %</label>
-              <input type="number" id="p-401match" class="field" placeholder="e.g. 3" min="0" max="100">
+            <div class="coach-block coach-ok">
+              <p class="coach-body">💡 Always contribute at least enough to capture the full employer match — it's an instant 50–100% return on that money.</p>
             </div>
           </div>
-          <div class="coach-block coach-ok">
-            <p class="coach-body">💡 Always contribute at least enough to capture the full employer match — it's an
-              instant 50–100% return on that money.</p>
+        </div>
+
+        <!-- PH: Government contributions -->
+        <div id="ph-retirement-fields" class="hidden space-y-3">
+          <div class="coach-block coach-info">
+            <p class="coach-body" style="font-size:.8125rem;line-height:1.6"><strong>🇵🇭 Philippines mandatory contributions</strong><br>SSS, PhilHealth, and Pag-IBIG are deducted from your payslip if employed. If self-employed or freelancing, you pay these yourself — never skip them.</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-ph-employment">Employment type</label>
+            <select id="p-ph-employment" class="field">
+              <option value="employed">Employed (company deducts contributions)</option>
+              <option value="self">Self-employed / Freelancer</option>
+              <option value="ofw">OFW (Overseas Filipino Worker)</option>
+              <option value="business">Business owner</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="p-ph-mp2">Do you have an MP2 (Modified Pag-IBIG II) account?</label>
+            <select id="p-ph-mp2" class="field">
+              <option value="no">Not yet</option>
+              <option value="yes">Yes — currently contributing</option>
+            </select>
+            <span class="form-hint">MP2 earns ~7% tax-free dividends annually — the Philippines' best low-risk investment</span>
           </div>
         </div>
         <div class="flex gap-3">
@@ -1985,11 +2011,11 @@
         <div class="eyebrow">Step 3 of 4</div>
         <h3 style="font-family:var(--font-d);font-size:1.25rem">Your Current Situation</h3>
         <div class="form-group">
-          <label class="form-label" for="p-debt">High-interest debt? (credit cards, personal loans above 7% APR)</label>
+          <label class="form-label" for="p-debt" id="p-debt-label">High-interest debt? (credit cards, personal loans above 7% APR)</label>
           <select id="p-debt" class="field">
             <option value="no">No high-interest debt</option>
-            <option value="some">Yes, some ($1–$5k)</option>
-            <option value="significant">Yes, significant ($5k+)</option>
+            <option value="some" id="debt-opt-some">Yes, some ($1–$5k)</option>
+            <option value="significant" id="debt-opt-sig">Yes, significant ($5k+)</option>
           </select>
         </div>
         <div class="form-group">
@@ -3118,19 +3144,43 @@
       document.getElementById('k401fields').classList.toggle('hidden', val !== 'yes');
     }
 
+    function toggleCountryFields(country) {
+      const isPH = country === 'ph';
+      document.getElementById('us-retirement-fields').classList.toggle('hidden', isPH);
+      document.getElementById('ph-retirement-fields').classList.toggle('hidden', !isPH);
+      // Update income placeholder and hint
+      const incomeEl = document.getElementById('p-income');
+      const incomeHint = document.getElementById('p-income-hint');
+      if (incomeEl) incomeEl.placeholder = isPH ? 'e.g. 35000' : 'e.g. 4500';
+      if (incomeHint) incomeHint.textContent = isPH
+        ? 'Monthly net pay in Philippine Pesos (₱) — what lands in your bank after SSS, PhilHealth, Pag-IBIG, and withholding tax'
+        : 'Net pay — the amount that actually hits your bank account';
+      // Update debt label and options for currency context
+      const debtLabel = document.getElementById('p-debt-label');
+      if (debtLabel) debtLabel.textContent = isPH
+        ? 'High-interest debt? (credit cards at 2%/mo, personal loans above 10% per year)'
+        : 'High-interest debt? (credit cards, personal loans above 7% APR)';
+      const optSome = document.getElementById('debt-opt-some');
+      const optSig  = document.getElementById('debt-opt-sig');
+      if (optSome) optSome.textContent = isPH ? 'Yes, some (₱10k–₱50k)' : 'Yes, some ($1–$5k)';
+      if (optSig)  optSig.textContent  = isPH ? 'Yes, significant (₱50k+)' : 'Yes, significant ($5k+)';
+    }
+
     function completeSetup() {
       const name = document.getElementById('p-name').value.trim();
       const income = parseFloat(document.getElementById('p-income').value) || 0;
       if (!name) { alert('Please enter your name.'); return; }
       if (!income) { alert('Please enter your monthly take-home pay.'); return; }
+      const country = document.getElementById('p-country').value;
       state.profile = {
-        name, income,
+        name, income, country,
         age: document.getElementById('p-age').value,
         household: document.getElementById('p-household').value,
-        country: document.getElementById('p-country').value,
         has401k: document.getElementById('p-has401k').value === 'yes',
         contrib401k: parseFloat(document.getElementById('p-401contrib')?.value) || 0,
         match401k: parseFloat(document.getElementById('p-401match')?.value) || 0,
+        phEmployment: document.getElementById('p-ph-employment')?.value || null,
+        phHasMP2: document.getElementById('p-ph-mp2')?.value === 'yes',
         debt: document.getElementById('p-debt').value,
         emergency: document.getElementById('p-emergency').value,
         housing: document.getElementById('p-housing').value,
@@ -3307,13 +3357,31 @@
       else loadTemplate('ramit');
     }
 
+    // Philippines-specific overrides layered on top of any template
+    const PH_BUCKET_EXAMPLES = {
+      fixed:    ['Rent / condo amortization', 'Meralco (electricity)', 'Maynilad / Manila Water', 'PLDT, Globe, or Converge internet', 'Mobile postpaid plan or load', 'Transportation (MRT, Grab, gas, tricycle)', 'SSS + PhilHealth + Pag-IBIG (if self-employed)', 'Minimum credit card / loan payments'],
+      invest:   ['MP2 (Modified Pag-IBIG II) — ₱500+/mo, ~7% tax-free', 'COL Financial EIP — ₱1,000+/mo in PSE stocks', 'GCash GInvest — ATRAM Equity Fund, starts ₱50', 'BDO / BPI / Metrobank UITF — Equity Fund', 'RTBs (Retail Treasury Bonds) via BTr — ₱5,000 min, ~6%/yr'],
+      savings:  ['Emergency fund — GoTyme Bank (4–6%), Maya Savings, or Tonik Bank', 'Pag-IBIG housing loan down payment fund', 'OFW remittance savings goal', 'Appliance / gadget replacement fund', 'Educational fund for children', 'Travel / balikbayan fund'],
+      debt:     ['Credit card balances (BDO, BPI, Metrobank, Citibank) — 2%/mo!', 'Personal loan (above minimum payments)', 'Online lending app debt (settle immediately)', 'Pag-IBIG multi-purpose loan', 'SSS salary loan', 'Car loan acceleration payments'],
+      guiltfree:['Dining out — Jollibee, carinderia, malls, restaurants', 'GrabFood / FoodPanda', 'Shopee / Lazada online shopping', 'SM / Ayala / Robinson\'s mall spending', 'Netflix, Disney+, streaming services', 'Gym membership or sports', 'Personal care + beauty / grooming', 'Pasalubong + family support'],
+      needs:    ['Rent + utilities (electric, water, internet)', 'Grocery + wet market (palengke) budget', 'Transportation (MRT, jeep, Grab, gas)', 'PhilHealth co-payments + medicines', 'Minimum debt payments', 'Mobile load or postpaid plan'],
+      wants:    ['Dining out + milk tea + coffee shops', 'Online shopping (Shopee, Lazada)', 'Streaming + mobile games + subscriptions', 'Mall + leisure activities', 'Travel + staycation', 'Hobbies + sports + fitness'],
+      living:   ['Basic groceries + wet market essentials', 'Load / minimal data plan', 'Local transport (jeep, tricycle)', 'Occasional carinderia meal', 'One small weekly treat to stay motivated'],
+    };
+
     function loadTemplate(key) {
       const tpl = TEMPLATES[key];
-      activeBuckets = tpl.buckets.map(b => ({ ...b }));
+      const isPH = state.profile?.country === 'ph';
+      activeBuckets = tpl.buckets.map(b => ({
+        ...b,
+        examples: isPH && PH_BUCKET_EXAMPLES[b.key] ? PH_BUCKET_EXAMPLES[b.key] : b.examples,
+      }));
       document.querySelectorAll('[data-tpl]').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tpl === key);
       });
-      document.getElementById('templateDesc').textContent = tpl.desc;
+      document.getElementById('templateDesc').textContent = isPH
+        ? tpl.desc.replace('401(k)', 'MP2 / UITF').replace('Roth IRA', 'COL Financial / GInvest').replace('NYSE', 'PSE')
+        : tpl.desc;
       renderBudgetInputs();
       renderBudgetChart();
       renderBudgetBreakdown();
@@ -3381,7 +3449,7 @@
       activeBuckets[i].pct = parseFloat(val) || 0;
       const income = state.profile?.income || 0;
       const el = document.getElementById('bamt-' + i);
-      if (el) el.textContent = '$' + Math.round(income * activeBuckets[i].pct / 100).toLocaleString() + '/mo';
+      if (el) el.textContent = getCurrency() + Math.round(income * activeBuckets[i].pct / 100).toLocaleString() + '/mo';
       renderBudgetChart();
       renderBudgetBreakdown();
       updateBudgetTotal();
@@ -3462,8 +3530,50 @@
       { id: 's6', icon: '🌐', title: '⑥ Start taxable investing', badge: 'WEALTH BUILDING', badgeClass: 'badge-muted', summary: 'Once retirement accounts are funded, open a taxable brokerage account. Invest in diversified low-cost index funds with no limits.', action: 'Open at Fidelity or Schwab. Start with VTI (US total market) + VXUS (international). Automate monthly purchases.', quote: '"Wealth is the result of time, not brilliance." — Morgan Housel' },
     ];
 
+    // ─── Philippines 6-Step Investment Ladder ───────────────────────────────
+    const PH_INVEST_STEPS = [
+      {
+        id: 's1', icon: '🛡️', title: '① Build Your Emergency Fund', badge: 'FOUNDATION', badgeClass: 'badge-err',
+        summary: '3–6 months of living expenses in a liquid, high-yield account. Build this before anything else — no stocks, no MP2, nothing. It is your financial survival layer.',
+        action: 'Open a GoTyme Bank, Maya Savings, or Tonik Bank account — these offer 4–6% interest with no lock-in. Target 3 months of expenses first, then grow to 6. Do NOT park this in time deposits; you need instant access.',
+        quote: '"Ang pera na nakatago ay pera na ligtas. Magtabi ka muna bago mag-invest." — Chinkee Tan',
+      },
+      {
+        id: 's2', icon: '🏛️', title: '② Complete Your Government Contributions (SSS + PhilHealth + Pag-IBIG)', badge: 'MANDATORY', badgeClass: 'badge-gold',
+        summary: 'SSS gives you retirement pension + loans. PhilHealth covers hospitalization. Pag-IBIG builds housing savings. Missing contributions means smaller future benefits and penalties. These come before any other investment.',
+        action: 'Employed: check your payslip — all 3 should appear as deductions. Self-employed / freelancer: register as voluntary member at each agency and set up monthly payments (SSS: ~₱1,125–₱3,250/mo depending on income; PhilHealth: 5% of income; Pag-IBIG: minimum ₱200/mo). OFWs: enroll in SSS OFW Flexi-Fund program.',
+        quote: '"The foundation of wealth is protection — protect your income, protect your health, protect your future." — Chinkee Tan',
+      },
+      {
+        id: 's3', icon: '🔥', title: '③ Eliminate High-Interest Debt', badge: 'URGENT', badgeClass: 'badge-warn',
+        summary: 'Philippine credit cards charge 2% per month — that is 24% per year compounding. Personal loans run 18–36% per year. Online lending apps can exceed 50% effective annual rate. No investment in the Philippines reliably beats those numbers. Debt payoff IS your best investment.',
+        action: 'List all debts from highest to lowest interest rate. Pay minimums on all, then attack the top one with every spare peso. Call your bank about balance-transfer promos (some offer 0% for 6–12 months). Cut unnecessary subscriptions to speed this up.',
+        quote: '"Utang ang pinakamalaking kaaway ng kalayaang pinansyal." — Chinkee Tan',
+      },
+      {
+        id: 's4', icon: '🏦', title: '④ Open MP2 — Modified Pag-IBIG II', badge: 'TAX-FREE ~7%', badgeClass: 'badge-ok',
+        summary: 'MP2 is the Philippines\' best-kept secret. Government-backed voluntary savings earning ~7% tax-free dividends annually — better than time deposits, UITFs in the short term, and any bank savings account. Zero market risk.',
+        action: 'Register at your nearest Pag-IBIG branch or at Virtual Pag-IBIG (pagibigfund.gov.ph). Start with as little as ₱500/month or lump sums anytime. Choose a 5-year term and treat this like your Philippine retirement account. Reinvest dividends to compound faster. Historical dividend rates: 2019: 7.39%, 2020: 6.12%, 2021: 6.00%, 2022: 7.03%, 2023: 7.03%.',
+        quote: '"Compound interest is the eighth wonder of the world. He who understands it, earns it; he who doesn\'t, pays it." — often attributed to Albert Einstein',
+      },
+      {
+        id: 's5', icon: '📊', title: '⑤ Invest in UITFs, Mutual Funds, or GInvest', badge: 'MARKET GROWTH', badgeClass: 'badge-primary',
+        summary: 'The PSEi (Philippine stock market index) has averaged ~8–10% annually over the long term. UITFs and mutual funds give you diversified market exposure without picking individual stocks. Commit to 10+ years.',
+        action: 'Choose your entry point: (A) GCash GInvest — minimum ₱50, select ATRAM Philippine Equity Smart Fund (easiest start). (B) BDO, BPI, or Metrobank online banking → UITFs → Philippine Equity Fund (minimum ₱1,000–₱50,000). (C) Sun Life or Philam Mutual Funds (minimum ₱5,000). (D) COL Financial Easy Investment Program (EIP) — ₱1,000/month into blue-chip stocks via peso cost averaging. Automate your contributions and do not check prices daily.',
+        quote: '"Hindi kailangan ng malaking puhunan para mamuhunan. Kailangan mo lang magsimula." — Fitz Villafuerte',
+      },
+      {
+        id: 's6', icon: '📈', title: '⑥ Philippine Stock Market + REITs + RTBs', badge: 'WEALTH BUILDING', badgeClass: 'badge-muted',
+        summary: 'Direct ownership of PSE stocks and REITs (Real Estate Investment Trusts) is the Philippine wealth-building layer. REITs are required by law to pay out 90% of income as dividends — passive income from real estate without owning property. Retail Treasury Bonds (RTBs) offer government-guaranteed ~6% returns.',
+        action: 'Open a COL Financial account (colfinancial.com) for PSE stocks — minimum ₱1,000/month via EIP. PSE-listed REITs to research: AREIT (Ayala Land, office/retail), MREIT (Megaworld), FILREIT (Filinvest), CREIT (Citicore solar energy), RCR (RL Commercial/Robinsons), DDMPR (DoubleDragon). For blue chips: BDO, BPI, AC (Ayala Corp), SM Prime (SMPH), JFC (Jollibee), PLDT (TEL). For RTBs: visit www.treasury.gov.ph — minimum ₱5,000, ~6% per year, government-backed.',
+        quote: '"Sa Pilipinas, ang pinakamabuting negosyo ay ang mag-ari ng mga negosyo — sa pamamagitan ng stock market, lahat ay makakapamuhunan." — Fitz Villafuerte',
+      },
+    ];
+
     function renderInvestSteps() {
-      document.getElementById('investSteps').innerHTML = INVEST_STEPS.map((step, i) => {
+      const isPH = state.profile?.country === 'ph';
+      const steps = isPH ? PH_INVEST_STEPS : INVEST_STEPS;
+      document.getElementById('investSteps').innerHTML = steps.map((step, i) => {
         const done = state.investSteps[step.id];
         return `
       <div class="invest-step ${done ? 'done' : 'active-step'} fade-in">
@@ -3491,7 +3601,21 @@
       const done = Object.values(state.investSteps).filter(Boolean).length;
       document.getElementById('investProgressNum').textContent = done + '/6';
       document.getElementById('investProgressBar').style.width = (done / 6 * 100) + '%';
-      const msgs = ['Click each step above to mark it complete as you set it up.', 'Great start — capture that employer match first, it\'s free money.', 'Building your emergency fund now. This is your financial survival layer.', 'Tackling debt! Every dollar paid is a guaranteed return.', 'Roth IRA opened — your most powerful retirement tool is active.', 'Maxing the 401(k) — massive tax benefits and forced wealth building.', '🎉 All 6 steps complete! You have a fully optimized investment system.'];
+      const msgs = isPH
+        ? ['I-click ang bawat hakbang para markahan bilang tapos na.',
+           'Magandang simula — itayo muna ang iyong emergency fund!',
+           'Emergency fund — tapos na! Siguraduhing buo ang SSS, PhilHealth, at Pag-IBIG mo.',
+           'Government contributions — set na! Alagaan muna ang mataas na utang.',
+           'MP2 account bukas na — ito ang pinaka-matalinong galaw para sa Pilipino.',
+           'Nagmu-mutual fund / UITF na — patuloy na mag-invest, huwag tumigil.',
+           '🎉 Lahat ng 6 hakbang tapos na! Mayroon ka nang optimized na investment system!']
+        : ['Click each step above to mark it complete as you set it up.',
+           'Great start — capture that employer match first, it\'s free money.',
+           'Building your emergency fund now. This is your financial survival layer.',
+           'Tackling debt! Every dollar paid is a guaranteed return.',
+           'Roth IRA opened — your most powerful retirement tool is active.',
+           'Maxing the 401(k) — massive tax benefits and forced wealth building.',
+           '🎉 All 6 steps complete! You have a fully optimized investment system.'];
       document.getElementById('investNextAction').textContent = msgs[done];
     }
 
@@ -4007,8 +4131,8 @@
               ticks: {
                 font: { size: 11 },
                 callback: v => {
-                  if (v >= 1000) return '$' + (v / 1000).toFixed(0) + 'k';
-                  return '$' + v;
+                  if (v >= 1000) return getCurrency() + (v / 1000).toFixed(0) + 'k';
+                  return getCurrency() + v;
                 },
               },
             },
@@ -4349,9 +4473,11 @@
       else
         ins.push({ type: 'neutral', title: `Savings rate is okay, can improve (${(savingsRate * 100).toFixed(0)}%)`, body: "You're saving something — that's the foundation. The goal is 15–20%+. Even automating an extra $100/month today will significantly impact your position in 10 years.", source: 'Morgan Housel' });
       if (dine && dine[1] / months > 600)
-        ins.push({ type: 'neutral', title: 'Dining out spending is notable', body: `You're spending ~${fmt(dine[1] / months)}/mo on dining. Track it, don't eliminate it. Cooking just 3 more meals a week at home could free up $150–$250/month for investing.`, source: 'Chinkee Tan' });
+        const isPH = state.profile?.country === 'ph';
+        ins.push({ type: 'neutral', title: 'Dining out spending is notable', body: isPH ? `You're spending ~${fmt(dine[1] / months)}/mo on dining. Swapping 3 takeout meals a week for lutong-bahay (home cooking) could free up ₱1,500–₱3,000/month for your MP2 or UITF.` : `You're spending ~${fmt(dine[1] / months)}/mo on dining. Track it, don't eliminate it. Cooking just 3 more meals a week at home could free up $150–$250/month for investing.`, source: 'Chinkee Tan' });
       if (subs && subs[1] / months > 100)
-        ins.push({ type: 'neutral', title: 'Subscription creep detected', body: `Subscriptions total ~${fmt(subs[1] / months)}/mo. Audit them: cancel anything unused or that doesn't actively improve your life. Every $15/mo saved is $180/year that could be invested.`, source: 'Ramit Sethi' });
+        const _isPH2 = state.profile?.country === 'ph';
+        ins.push({ type: 'neutral', title: 'Subscription creep detected', body: _isPH2 ? `Subscriptions total ~${fmt(subs[1] / months)}/mo. Audit them: cancel anything unused. Every ₱500/mo saved is ₱6,000/year that could go into your MP2 or GInvest account.` : `Subscriptions total ~${fmt(subs[1] / months)}/mo. Audit them: cancel anything unused or that doesn't actively improve your life. Every $15/mo saved is $180/year that could be invested.`, source: 'Ramit Sethi' });
       return ins;
     }
 
@@ -4670,7 +4796,8 @@
     // ════════════════════════════════════════
     // UTILITIES
     // ════════════════════════════════════════
-    function fmt(n) { return '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+    function getCurrency() { return state.profile?.country === 'ph' ? '₱' : '$'; }
+    function fmt(n) { return getCurrency() + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
 
     // ════════════════════════════════════════
     // INIT
@@ -4681,6 +4808,12 @@
           const p = state.profile;
           if (document.getElementById('p-name')) document.getElementById('p-name').value = p.name || '';
           if (document.getElementById('p-income')) document.getElementById('p-income').value = p.income || '';
+          if (document.getElementById('p-country') && p.country) {
+            document.getElementById('p-country').value = p.country;
+            toggleCountryFields(p.country);
+          }
+          if (p.phEmployment && document.getElementById('p-ph-employment')) document.getElementById('p-ph-employment').value = p.phEmployment;
+          if (document.getElementById('p-ph-mp2')) document.getElementById('p-ph-mp2').value = p.phHasMP2 ? 'yes' : 'no';
         }, 100);
       }
       if (state.dreamLife) {
@@ -4733,7 +4866,7 @@
         if (greet) greet.textContent = name;
         const chips = document.getElementById('home-stat-chips');
         if (chips) {
-          const inc = state.profile?.income ? '$' + state.profile.income.toLocaleString() + '/mo income' : null;
+          const inc = state.profile?.income ? getCurrency() + state.profile.income.toLocaleString() + '/mo income' : null;
           const grade = state.lastAnalysis?.grade ? `Grade ${state.lastAnalysis.grade}` : null;
           const items = [inc, grade].filter(Boolean);
           chips.innerHTML = items.map(t => `<span style="font-size:.8125rem;background:var(--card);border:1px solid var(--divider);border-radius:999px;padding:.25rem .75rem;font-weight:600">${t}</span>`).join('');
