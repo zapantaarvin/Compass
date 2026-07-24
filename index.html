@@ -1456,6 +1456,21 @@
 <body>
 
   <!-- NAV -->
+  <!-- Income editor modal -->
+  <div id="incomeModal" onclick="if(event.target===this)closeIncomeEditor()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem">
+    <div style="background:var(--card);border:1px solid var(--divider);border-radius:16px;padding:1.75rem;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+      <h3 style="font-family:var(--font-d);font-size:1.125rem;margin-bottom:.25rem">Update Monthly Income</h3>
+      <p style="font-size:.8125rem;color:var(--muted);margin-bottom:1.25rem">Your net take-home pay after taxes. Update this whenever your salary, bonus, or situation changes.</p>
+      <label style="font-size:.8125rem;font-weight:600;display:block;margin-bottom:.375rem">Monthly take-home pay (after taxes)</label>
+      <input type="number" id="income-edit-val" class="field" placeholder="e.g. 4500" min="0" style="margin-bottom:1.25rem" onkeydown="if(event.key==='Enter')saveIncome()">
+      <div style="display:flex;gap:.625rem">
+        <button onclick="saveIncome()" class="btn btn-primary" style="flex:1;justify-content:center">Save</button>
+        <button onclick="closeIncomeEditor()" class="btn btn-secondary" style="flex:1;justify-content:center">Cancel</button>
+      </div>
+      <p id="income-edit-err" style="font-size:.8125rem;color:var(--err);margin-top:.625rem;min-height:1rem"></p>
+    </div>
+  </div>
+
   <!-- Loading overlay -->
   <div id="appLoading">
     <div class="spin"></div>
@@ -1488,6 +1503,10 @@
           <input type="email"    id="si-email"    class="auth-input" placeholder="Email address" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('si-password').focus()">
           <input type="password" id="si-password" class="auth-input" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')signInWithEmail()">
         </div>
+        <label style="display:flex;align-items:center;gap:.5rem;font-size:.8125rem;color:var(--muted);margin-bottom:.875rem;cursor:pointer">
+          <input type="checkbox" id="si-remember" style="accent-color:var(--primary);width:15px;height:15px">
+          Remember my email
+        </label>
         <button onclick="signInWithEmail()" class="btn btn-primary" style="width:100%;justify-content:center;font-size:.9375rem;padding:.625rem">Sign In</button>
         <p class="auth-err"></p>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem">
@@ -2129,10 +2148,12 @@
           <p class="text-muted" style="font-size:.875rem;margin-top:.25rem">A budget that funds your dream life — not
             one that restricts it.</p>
         </div>
-        <div class="card-sm text-center" style="padding:.75rem 1.5rem">
+        <div class="card-sm text-center" style="padding:.75rem 1.5rem;min-width:160px">
           <p class="text-muted" style="font-size:.75rem">Monthly Income</p>
-          <p style="font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;margin-top:.125rem;font-family:var(--font-d)"
-            id="budgetIncomeDisplay">—</p>
+          <div style="display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.125rem">
+            <p style="font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;margin:0;font-family:var(--font-d)" id="budgetIncomeDisplay">—</p>
+            <button onclick="openIncomeEditor()" title="Edit income" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.875rem;padding:2px 4px;border-radius:4px;line-height:1" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--muted)'">✎</button>
+          </div>
         </div>
       </div>
 
@@ -2781,6 +2802,19 @@
         const el = document.getElementById('auth-' + v);
         if (el) el.style.display = (v === step) ? 'block' : 'none';
       });
+      // Prefill remembered email on sign-in view
+      if (step === 'signin') {
+        const saved = localStorage.getItem('compass_remembered_email');
+        if (saved) {
+          const emailEl = document.getElementById('si-email');
+          const remEl   = document.getElementById('si-remember');
+          if (emailEl) emailEl.value = saved;
+          if (remEl)   remEl.checked = true;
+          // Focus password since email is already filled
+          setTimeout(() => document.getElementById('si-password')?.focus(), 50);
+          return;
+        }
+      }
       const focusMap = { 'signin':'si-email', 'signup-1':'su-email', 'signup-2':'su-pw1', 'forgot':'fp-email', 'new-pw':'np-pw1' };
       if (focusMap[step]) setTimeout(() => document.getElementById(focusMap[step])?.focus(), 50);
     }
@@ -2789,7 +2823,11 @@
       _authErrStep('signin', '');
       const email    = document.getElementById('si-email')?.value.trim();
       const password = document.getElementById('si-password')?.value;
+      const remember = document.getElementById('si-remember')?.checked;
       if (!email || !password) { _authErrStep('signin', 'Please enter your email and password.'); return; }
+      // Save or clear remembered email
+      if (remember) localStorage.setItem('compass_remembered_email', email);
+      else localStorage.removeItem('compass_remembered_email');
       const { error } = await _sb.auth.signInWithPassword({ email, password });
       if (error) _authErrStep('signin', error.message);
     }
@@ -3254,6 +3292,26 @@
       renderBudgetInputs();
       renderBudgetChart();
       renderBudgetBreakdown();
+    }
+
+    function openIncomeEditor() {
+      const modal = document.getElementById('incomeModal');
+      document.getElementById('income-edit-val').value = state.profile?.income || '';
+      document.getElementById('income-edit-err').textContent = '';
+      modal.style.display = 'flex';
+      setTimeout(() => document.getElementById('income-edit-val').focus(), 50);
+    }
+    function closeIncomeEditor() {
+      document.getElementById('incomeModal').style.display = 'none';
+    }
+    function saveIncome() {
+      const val = parseFloat(document.getElementById('income-edit-val').value);
+      if (!val || val <= 0) { document.getElementById('income-edit-err').textContent = 'Please enter a valid income amount.'; return; }
+      if (!state.profile) state.profile = {};
+      state.profile.income = val;
+      saveState();
+      closeIncomeEditor();
+      renderBudget();
     }
 
     function renderBudgetInputs() {
