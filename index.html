@@ -1438,8 +1438,8 @@
     }
 
     .user-avatar {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: var(--primary);
       color: white;
@@ -1448,8 +1448,39 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0
+      flex-shrink: 0;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color .15s;
     }
+    .user-avatar:hover { border-color: rgba(255,255,255,.4); }
+    .avatar-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--card);
+      border: 1px solid var(--divider);
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      min-width: 180px;
+      z-index: 150;
+      overflow: hidden;
+    }
+    .avatar-menu-item {
+      display: flex;
+      align-items: center;
+      gap: .625rem;
+      padding: .625rem 1rem;
+      font-size: .875rem;
+      color: var(--text);
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+    }
+    .avatar-menu-item:hover { background: var(--surface-off); }
+    .avatar-menu-item.danger { color: var(--err); }
   </style>
 </head>
 
@@ -1468,6 +1499,159 @@
         <button onclick="closeIncomeEditor()" class="btn btn-secondary" style="flex:1;justify-content:center">Cancel</button>
       </div>
       <p id="income-edit-err" style="font-size:.8125rem;color:var(--err);margin-top:.625rem;min-height:1rem"></p>
+    </div>
+  </div>
+
+  <!-- Profile Settings modal -->
+  <div id="profileSettingsModal" onclick="if(event.target===this)closeProfileSettings()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto">
+    <div style="background:var(--card);border:1px solid var(--divider);border-radius:16px;width:100%;max-width:520px;box-shadow:0 24px 64px rgba(0,0,0,.25);margin:auto">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--divider)">
+        <div>
+          <h2 style="font-family:var(--font-d);font-size:1.125rem;margin:0">Profile Settings</h2>
+          <p style="font-size:.75rem;color:var(--muted);margin-top:.125rem">Changes save immediately</p>
+        </div>
+        <button onclick="closeProfileSettings()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1.25rem;line-height:1;padding:4px">✕</button>
+      </div>
+
+      <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem">
+
+        <!-- Name + Age + Household -->
+        <div>
+          <p style="font-size:.6875rem;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:.75rem">ABOUT YOU</p>
+          <div class="space-y-3">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">First name</label>
+              <input type="text" id="ps-name" class="field" placeholder="Your first name">
+            </div>
+            <div class="grid-2">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Age range</label>
+                <select id="ps-age" class="field">
+                  <option value="">Select…</option>
+                  <option>Under 25</option><option>25–34</option><option>35–44</option><option>45–54</option><option>55+</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Household size</label>
+                <select id="ps-household" class="field">
+                  <option value="1">Just me</option><option value="2">2 people</option><option value="3">3 people</option><option value="4">4+ people</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Country + Income -->
+        <div>
+          <p style="font-size:.6875rem;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:.75rem">LOCATION & INCOME</p>
+          <div class="space-y-3">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Country / Region</label>
+              <select id="ps-country" class="field" onchange="psToggleCountry(this.value)">
+                <option value="us">United States 🇺🇸</option>
+                <option value="ph">Philippines 🇵🇭</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label" id="ps-income-label">Monthly take-home pay (after taxes)</label>
+              <input type="number" id="ps-income" class="field" placeholder="e.g. 4500" min="0">
+              <span class="form-hint" id="ps-income-hint">Net pay after all deductions</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- US: 401k -->
+        <div id="ps-us-fields">
+          <p style="font-size:.6875rem;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:.75rem">RETIREMENT (US)</p>
+          <div class="space-y-3">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Do you have a 401(k) or employer retirement plan?</label>
+              <select id="ps-has401k" class="field" onchange="document.getElementById('ps-401fields').classList.toggle('hidden',this.value!=='yes')">
+                <option value="no">No</option><option value="yes">Yes</option>
+              </select>
+            </div>
+            <div id="ps-401fields" class="hidden grid-2">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Your contribution %</label>
+                <input type="number" id="ps-401contrib" class="field" placeholder="e.g. 6" min="0" max="100">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Employer match %</label>
+                <input type="number" id="ps-401match" class="field" placeholder="e.g. 3" min="0" max="100">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PH: SSS / Pag-IBIG / MP2 -->
+        <div id="ps-ph-fields" class="hidden">
+          <p style="font-size:.6875rem;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:.75rem">GOVERNMENT CONTRIBUTIONS (PH)</p>
+          <div class="space-y-3">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Employment type</label>
+              <select id="ps-ph-employment" class="field">
+                <option value="employed">Employed (company deducts SSS/PhilHealth/Pag-IBIG)</option>
+                <option value="self">Self-employed / Freelancer</option>
+                <option value="ofw">OFW (Overseas Filipino Worker)</option>
+                <option value="business">Business owner</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Do you have an MP2 (Modified Pag-IBIG II) account?</label>
+              <select id="ps-ph-mp2" class="field">
+                <option value="no">Not yet</option><option value="yes">Yes — currently contributing</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Situation -->
+        <div>
+          <p style="font-size:.6875rem;font-weight:700;color:var(--muted);letter-spacing:.06em;margin-bottom:.75rem">YOUR SITUATION</p>
+          <div class="space-y-3">
+            <div class="form-group" style="margin:0">
+              <label class="form-label" id="ps-debt-label">High-interest debt?</label>
+              <select id="ps-debt" class="field">
+                <option value="no">No high-interest debt</option>
+                <option value="some" id="ps-debt-opt-some">Yes, some ($1–$5k)</option>
+                <option value="significant" id="ps-debt-opt-sig">Yes, significant ($5k+)</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Emergency fund status</label>
+              <select id="ps-emergency" class="field">
+                <option value="none">None — starting from zero</option>
+                <option value="partial">Partial — less than 3 months</option>
+                <option value="3mo">3 months of expenses</option>
+                <option value="6mo">6+ months — fully funded</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Housing situation</label>
+              <select id="ps-housing" class="field">
+                <option value="rent">Renting</option>
+                <option value="own">Own / mortgage</option>
+                <option value="family">Living with family (low cost)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save -->
+        <button onclick="saveProfileSettings()" class="btn btn-primary" style="width:100%;justify-content:center;padding:.75rem;font-size:.9375rem">Save Changes</button>
+        <p id="ps-save-msg" style="font-size:.8125rem;color:var(--ok);text-align:center;min-height:1.25rem"></p>
+
+        <!-- Danger zone -->
+        <div style="border-top:1px solid var(--divider);padding-top:1.25rem">
+          <p style="font-size:.6875rem;font-weight:700;color:var(--err);letter-spacing:.06em;margin-bottom:.625rem">DANGER ZONE</p>
+          <p style="font-size:.8125rem;color:var(--muted);margin-bottom:.75rem;line-height:1.5">Reset your entire profile, budget, dream life, and invest checklist. You'll start the 4-step setup from scratch. Your account and transaction history are not affected.</p>
+          <button onclick="confirmResetProfile()" class="btn" style="background:transparent;border:1px solid var(--err);color:var(--err);font-size:.875rem;padding:.5rem 1rem">Reset Profile & Start Over</button>
+        </div>
+
+      </div>
     </div>
   </div>
 
@@ -1640,10 +1824,20 @@
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
       </button>
-      <div id="userNav" style="display:none">
-        <div class="user-avatar" id="userAvatar" title="">?</div>
-        <button onclick="signOut()" class="btn btn-secondary" style="padding:.25rem .625rem;font-size:.75rem">Sign
-          out</button>
+      <div id="userNav" style="display:none;position:relative">
+        <div class="user-avatar" id="userAvatar" title="" onclick="toggleAvatarMenu(event)">?</div>
+        <div id="avatarMenu" class="avatar-menu" style="display:none">
+          <div style="padding:.625rem 1rem .375rem;border-bottom:1px solid var(--divider)">
+            <p style="font-size:.6875rem;color:var(--muted);margin-bottom:.125rem">Signed in as</p>
+            <p style="font-size:.8125rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" id="avatarMenuEmail"></p>
+          </div>
+          <button class="avatar-menu-item" onclick="openProfileSettings();closeAvatarMenu()">
+            <span>⚙️</span> Edit Profile
+          </button>
+          <button class="avatar-menu-item" onclick="signOut();closeAvatarMenu()">
+            <span>↩</span> Sign Out
+          </button>
+        </div>
       </div>
     </div>
   </nav>
@@ -2963,6 +3157,145 @@
       _showApp(false);
     }
 
+    // ─── Avatar dropdown ──────────────────────────────────────────────
+    function toggleAvatarMenu(e) {
+      e.stopPropagation();
+      const menu = document.getElementById('avatarMenu');
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+    function closeAvatarMenu() {
+      const menu = document.getElementById('avatarMenu');
+      if (menu) menu.style.display = 'none';
+    }
+    document.addEventListener('click', () => closeAvatarMenu());
+
+    // ─── Profile Settings modal ───────────────────────────────────────
+    function openProfileSettings() {
+      const p = state.profile || {};
+      const isPH = p.country === 'ph';
+
+      // Populate fields
+      _setVal('ps-name', p.name || '');
+      _setVal('ps-age', p.age || '');
+      _setVal('ps-household', p.household || '1');
+      _setVal('ps-country', p.country || 'us');
+      _setVal('ps-income', p.income || '');
+      _setVal('ps-debt', p.debt || 'no');
+      _setVal('ps-emergency', p.emergency || 'none');
+      _setVal('ps-housing', p.housing || 'rent');
+
+      if (isPH) {
+        _setVal('ps-ph-employment', p.phEmployment || 'employed');
+        _setVal('ps-ph-mp2', p.phMp2 || 'no');
+      } else {
+        _setVal('ps-has401k', p.has401k || 'no');
+        _setVal('ps-401contrib', p.contrib401k || '');
+        _setVal('ps-401match', p.match401k || '');
+        const f401 = document.getElementById('ps-401fields');
+        if (f401) f401.classList.toggle('hidden', (p.has401k || 'no') !== 'yes');
+      }
+
+      psToggleCountry(p.country || 'us');
+      document.getElementById('ps-save-msg').textContent = '';
+      document.getElementById('profileSettingsModal').style.display = 'flex';
+    }
+    function _setVal(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    }
+    function closeProfileSettings() {
+      document.getElementById('profileSettingsModal').style.display = 'none';
+    }
+    function psToggleCountry(country) {
+      const isPH = country === 'ph';
+      document.getElementById('ps-us-fields').classList.toggle('hidden', isPH);
+      document.getElementById('ps-ph-fields').classList.toggle('hidden', !isPH);
+      const incomeLabel = document.getElementById('ps-income-label');
+      const incomeHint  = document.getElementById('ps-income-hint');
+      if (isPH) {
+        if (incomeLabel) incomeLabel.textContent = 'Monthly take-home pay (in Philippine Peso)';
+        if (incomeHint)  incomeHint.textContent  = 'Net pay after SSS, PhilHealth, Pag-IBIG, and tax';
+        // Update debt options
+        const some = document.getElementById('ps-debt-opt-some');
+        const sig  = document.getElementById('ps-debt-opt-sig');
+        if (some) some.textContent = 'Yes, some (₱10k–₱50k)';
+        if (sig)  sig.textContent  = 'Yes, significant (₱50k+)';
+      } else {
+        if (incomeLabel) incomeLabel.textContent = 'Monthly take-home pay (after taxes)';
+        if (incomeHint)  incomeHint.textContent  = 'Net pay after all deductions';
+        const some = document.getElementById('ps-debt-opt-some');
+        const sig  = document.getElementById('ps-debt-opt-sig');
+        if (some) some.textContent = 'Yes, some ($1–$5k)';
+        if (sig)  sig.textContent  = 'Yes, significant ($5k+)';
+      }
+    }
+    function saveProfileSettings() {
+      const country = document.getElementById('ps-country')?.value || 'us';
+      const isPH    = country === 'ph';
+
+      const updated = {
+        name:       document.getElementById('ps-name')?.value.trim() || '',
+        age:        document.getElementById('ps-age')?.value || '',
+        household:  document.getElementById('ps-household')?.value || '1',
+        country,
+        income:     parseFloat(document.getElementById('ps-income')?.value) || 0,
+        debt:       document.getElementById('ps-debt')?.value || 'no',
+        emergency:  document.getElementById('ps-emergency')?.value || 'none',
+        housing:    document.getElementById('ps-housing')?.value || 'rent',
+      };
+
+      if (isPH) {
+        updated.phEmployment = document.getElementById('ps-ph-employment')?.value || 'employed';
+        updated.phMp2        = document.getElementById('ps-ph-mp2')?.value || 'no';
+      } else {
+        updated.has401k    = document.getElementById('ps-has401k')?.value || 'no';
+        updated.contrib401k = parseFloat(document.getElementById('ps-401contrib')?.value) || 0;
+        updated.match401k   = parseFloat(document.getElementById('ps-401match')?.value) || 0;
+      }
+
+      // Merge — preserve any extra fields already in state.profile
+      state.profile = { ...(state.profile || {}), ...updated };
+      saveState();
+
+      // Refresh all affected UI
+      updateCurrencySymbols();
+      renderInvestSteps();
+      renderHomeProgress();
+      // Refresh budget display if it's already been rendered
+      if (document.getElementById('budget-breakdown')?.children.length) {
+        renderBudgetInputs?.();
+        renderBudgetBreakdown?.();
+      }
+
+      // Also update the editable income field on Budget tab
+      const incomeInput = document.getElementById('monthly-income-input');
+      if (incomeInput) incomeInput.value = state.profile.income || '';
+
+      const msg = document.getElementById('ps-save-msg');
+      if (msg) {
+        msg.textContent = '✓ Profile saved';
+        setTimeout(() => { if (msg) msg.textContent = ''; }, 2500);
+      }
+    }
+    function confirmResetProfile() {
+      const ok = window.confirm(
+        'This will reset your profile, dream life, budget, and investment checklist.\n\nYour Supabase account and sign-in will NOT be affected.\n\nAre you sure you want to start over?'
+      );
+      if (!ok) return;
+      state.profile      = null;
+      state.dreamLife    = null;
+      state.budget       = null;
+      state.lastAnalysis = null;
+      state.investSteps  = { s1:false,s2:false,s3:false,s4:false,s5:false,s6:false };
+      state.investActions = {};
+      state.setupStep    = 1;
+      state.manualAdjustments = null;
+      saveState();
+      closeProfileSettings();
+      // Navigate to Setup tab
+      switchTab('setup');
+    }
+
     function _authErrStep(step, msg) {
       const view = document.getElementById('auth-' + step);
       const el = view ? view.querySelector('.auth-err') : document.querySelector('.auth-err');
@@ -2996,6 +3329,8 @@
       const initials = (user.user_metadata?.full_name || user.email || '?').charAt(0).toUpperCase();
       const avatar = document.getElementById('userAvatar');
       if (avatar) { avatar.textContent = initials; avatar.title = user.email || ''; }
+      const menuEmail = document.getElementById('avatarMenuEmail');
+      if (menuEmail) menuEmail.textContent = user.email || '';
       document.getElementById('userNav').style.display = 'flex';
 
       // Restore app UI from state
