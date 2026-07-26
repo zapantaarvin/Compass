@@ -4920,6 +4920,12 @@ Include every transaction row, even small amounts. Do not skip any debits.</span
         _showLearnToast(editedTxs.length);
       }
       txEditMode = false;
+      const _btn = document.getElementById('txEditModeBtn');
+      const _bar = document.getElementById('txEditBar');
+      const _tip = document.getElementById('txTip');
+      if (_btn) { _btn.textContent = 'Edit Mode'; _btn.style.background = ''; _btn.style.color = ''; _btn.style.borderColor = ''; }
+      if (_bar) { _bar.classList.add('hidden'); }
+      if (_tip) { _tip.classList.remove('hidden'); }
       runAnalysis([...lastAnalysisTxs]);
     }
 
