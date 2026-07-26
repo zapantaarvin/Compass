@@ -3100,7 +3100,8 @@
       if (!pw1) { _authErrStep('signup-2', 'Please enter a password.'); return; }
       if (pw1.length < 6) { _authErrStep('signup-2', 'Password must be at least 6 characters.'); return; }
       if (pw1 !== pw2) { _authErrStep('signup-2', 'Passwords do not match.'); return; }
-      const { error } = await _sb.auth.signUp({ email: _signupEmail, password: pw1 });
+      const emailRedirectTo = 'https://zapantaarvin.github.io/Compass/';
+      const { error } = await _sb.auth.signUp({ email: _signupEmail, password: pw1, options: { emailRedirectTo } });
       if (error) { _authErrStep('signup-2', error.message); return; }
       document.getElementById('su-done-email').textContent = _signupEmail;
       showAuthStep('signup-done');
@@ -3112,7 +3113,7 @@
       const msg = document.getElementById('resend-msg');
       if (!_signupEmail) return;
       btn.disabled = true;
-      const { error } = await _sb.auth.resend({ type: 'signup', email: _signupEmail });
+      const { error } = await _sb.auth.resend({ type: 'signup', email: _signupEmail, options: { emailRedirectTo: 'https://zapantaarvin.github.io/Compass/' } });
       if (error) { msg.style.color = 'var(--err)'; msg.textContent = error.message; btn.disabled = false; return; }
       msg.style.color = 'var(--ok)'; msg.textContent = 'Email resent! Check your inbox.';
       // 60-second cooldown
