@@ -2649,15 +2649,32 @@
                   <strong>claude.ai</strong> and start a new chat. Upload your PDF, then paste this prompt:</p>
                 <div
                   style="margin-top:.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);padding:.625rem .75rem;font-size:.8125rem;font-family:monospace;line-height:1.6;color:var(--text);position:relative">
-                  <span id="aiPromptText">Please extract all transactions from this bank statement and format them as a
-                    CSV with exactly these columns:
-                    Date, Description, Amount
+                  <span id="aiPromptText">You are a financial data analyst. Extract all transactions from this bank statement and return ONLY raw CSV data — no markdown, no explanation, no code blocks, just the CSV.
 
-                    Rules:
-                    - Date format: MM/DD/YYYY
-                    - Amount should be positive numbers only (no negatives, no dollar signs)
-                    - Exclude credits, deposits, and payments — only include spending/debits
-                    - Include every row, even small ones</span>
+Columns (in this exact order): Date,Description,Amount,Category
+
+Rules:
+- Date: MM/DD/YYYY format
+- Description: Clean merchant name only. Strip terminal IDs, reference numbers, and bank codes. Example: "JOLLIBEE 0042 POS DEBIT" → "Jollibee". "SHP-SHOPEE PH *LAZADA REF#9201" → "Shopee".
+- Amount: Positive number only. No currency symbols, no commas.
+- Only include debits and spending. Exclude: deposits, salary credits, transfers between own accounts, refunds.
+- Category: Pick exactly one from this list — Housing, Dining Out, Groceries, Transportation, Subscriptions, Shopping, Health, Entertainment, Travel, Giving, Education, Other
+
+Category guide:
+- Housing → rent, condo amortization, HOA dues, electric (Meralco), water (Maynilad/Manila Water), internet (PLDT/Globe/Converge), phone bill
+- Dining Out → restaurants, fast food (Jollibee, McDonald's, KFC), food delivery (GrabFood, Foodpanda), cafes, milk tea
+- Groceries → supermarkets (SM, Robinsons, Puregold, S&R, Landers, Costco, Walmart), wet market, convenience stores for food
+- Transportation → fuel/gas, Grab car/taxi, LRT/MRT/jeep fare, parking, car loan, toll, Uber/Lyft
+- Subscriptions → Netflix, Spotify, Disney+, YouTube Premium, Apple, gym memberships, software subscriptions, Claude, ChatGPT
+- Shopping → Shopee, Lazada, Amazon, department stores, clothing, electronics, online marketplaces
+- Health → Mercury Drug, Watsons, Rose Pharmacy, hospital, clinic, doctor, dental, lab tests, vitamins
+- Entertainment → movies (SM Cinema, Ayala Cinemas, AMC), concerts, events, bowling, games
+- Travel → flights (Cebu Pacific, AirAsia, PAL), hotels, Airbnb, booking.com, vacation packages
+- Giving → church tithe, donations, charity, foundations
+- Education → tuition, school fees, books, Udemy, Coursera, online courses
+- Other → anything that does not clearly fit the above
+
+Include every transaction row, even small amounts. Do not skip any debits.</span>
                   <button onclick="copyPrompt()"
                     style="position:absolute;top:.375rem;right:.375rem;padding:.125rem .5rem;font-size:.625rem;background:var(--primary);color:white;border:none;border-radius:var(--r);cursor:pointer;font-weight:600">Copy</button>
                 </div>
@@ -4171,15 +4188,25 @@
             const dateF = fields.find(f => /date|posted/i.test(f));
             const descF = fields.find(f => /desc|merchant|name|memo/i.test(f));
             const amtF = fields.find(f => /amount|debit|charge|withdrawal/i.test(f));
+            const catF  = fields.find(f => /^cat(egory)?$/i.test(f));
             if (!dateF || !descF || !amtF) { reject(new Error(`${file.name}: could not find date, description, and amount columns.`)); return; }
+            // Valid category names from CAT_RULES + Other
+            const VALID_CATS = new Set(CAT_RULES.map(r => r.cat.toLowerCase()).concat(['other']));
             const txs = data.map(row => {
-              const raw = (row[amtF] || '').replace(/[$,\s]/g, '').replace(/[()]/g, '-');
+              const raw = (row[amtF] || '').replace(/[$,₱\s]/g, '').replace(/[()]/g, '-');
               const amt = parseFloat(raw);
               const date = new Date(row[dateF]);
               if (!isFinite(amt) || isNaN(date)) return null;
               const spend = amt < 0 ? Math.abs(amt) : amt;
-              return { date, desc: row[descF] || '', amount: spend, cat: categorize(row[descF] || ''), _src: file.name };
-            }).filter(t => t && t.amount > 0 && t.amount < 20000);
+              const desc = row[descF] || '';
+              // Use AI-supplied category if valid, otherwise fall back to learned rules + built-in
+              const aiCat = catF ? (row[catF] || '').trim() : '';
+              const aiCatMatched = aiCat && VALID_CATS.has(aiCat.toLowerCase())
+                ? CAT_RULES.find(r => r.cat.toLowerCase() === aiCat.toLowerCase())?.cat || aiCat
+                : null;
+              const cat = aiCatMatched || categorize(desc);
+              return { date, desc, amount: spend, cat, _src: file.name, _aiCat: !!aiCatMatched };
+            }).filter(t => t && t.amount > 0 && t.amount < 100000);
             resolve(txs);
           },
           error: () => reject(new Error(`Could not parse ${file.name}`)),
