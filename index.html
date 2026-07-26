@@ -3024,7 +3024,7 @@
       profile: null, dreamLife: null, budget: null, lastAnalysis: null,
       investSteps: { s1: false, s2: false, s3: false, s4: false, s5: false, s6: false },
       investActions: {},
-      setupStep: 1, currentTab: 'home', mentor: null, manualAdjustments: null,
+      setupStep: 1, currentTab: 'home', mentor: null, manualAdjustments: null, learnedCats: {},
     };
     let state = { ...DEFAULT_STATE };
     let _currentUser = null;
@@ -3291,6 +3291,7 @@
       state.investActions = {};
       state.setupStep    = 1;
       state.manualAdjustments = null;
+      state.learnedCats  = {};
       saveState();
       closeProfileSettings();
       // Navigate to Setup tab
@@ -4057,10 +4058,55 @@
       { cat: 'Education', color: '#437a22', keys: ['school', 'tuition', 'udemy', 'coursera', 'books', 'course', 'college', 'university', 'student'] },
     ];
 
+    // Words too generic to use as category signals
+    const CAT_STOP_WORDS = new Set([
+      'payment','purchase','debit','credit','transfer','tran','txn','auth','ref','pos','pymt',
+      'from','with','your','this','that','the','and','for','inc','llc','corp','ltd','co',
+      'online','store','shop','card','visa','mast','amex','bank','acct','account','bill',
+      'recurring','auto','autopay','direct','deposit','withdrawal','check','wire',
+      'street','avenue','blvd','road','suite','floor','bldg','branch','mall','city',
+      'philippines','manila','quezon','makati','cebu','davao','pasig','taguig','pasay',
+      'north','south','east','west','main','unit','buil','phils','phnl','cent',
+    ]);
+
+    function _extractKeywords(desc) {
+      // Clean description, split into words, keep meaningful ones
+      const cleaned = desc.toLowerCase().replace(/[^a-z0-9\s&']/g, ' ').replace(/\b\d+\b/g, ' ');
+      return cleaned.split(/\s+/).filter(w => w.length >= 3 && !CAT_STOP_WORDS.has(w) && !/^\d+$/.test(w));
+    }
+
     function categorize(desc) {
       const d = desc.toLowerCase();
+      // 1. Exact description match (highest priority — user's own corrections)
+      const learned = state.learnedCats || {};
+      if (learned[d]) return learned[d];
+      // 2. Learned keyword rules
+      const words = _extractKeywords(desc);
+      for (const w of words) {
+        if (learned['kw:' + w]) return learned['kw:' + w];
+      }
+      // 3. Built-in rules
       for (const rule of CAT_RULES) if (rule.keys.some(k => d.includes(k))) return rule.cat;
       return 'Other';
+    }
+
+    function learnFromEdits(editedTxs) {
+      if (!state.learnedCats) state.learnedCats = {};
+      let count = 0;
+      editedTxs.forEach(t => {
+        if (!t._edited || !t.cat) return;
+        const d = t.desc.toLowerCase();
+        // Store exact description match
+        if (!state.learnedCats[d] || state.learnedCats[d] !== t.cat) {
+          state.learnedCats[d] = t.cat;
+          count++;
+        }
+        // Store per-keyword rules
+        _extractKeywords(t.desc).forEach(w => {
+          state.learnedCats['kw:' + w] = t.cat;
+        });
+      });
+      return count;
     }
 
     function initAnalyzeTab() {
@@ -4839,8 +4885,29 @@
         if (!isNaN(amt) && amt > 0 && amt !== lastAnalysisTxs[i].amount) { lastAnalysisTxs[i].amount = amt; changed = true; }
         if (changed) lastAnalysisTxs[i]._edited = true;
       });
+      // Learn from manual category corrections and persist
+      const editedTxs = lastAnalysisTxs.filter(t => t._edited);
+      if (editedTxs.length) {
+        learnFromEdits(editedTxs);
+        saveState();
+        _showLearnToast(editedTxs.length);
+      }
       txEditMode = false;
       runAnalysis([...lastAnalysisTxs]);
+    }
+
+    function _showLearnToast(count) {
+      let toast = document.getElementById('learnToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'learnToast';
+        toast.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;padding:.625rem 1.25rem;border-radius:var(--r-full);font-size:.875rem;font-weight:600;z-index:300;box-shadow:0 4px 20px rgba(0,0,0,.2);pointer-events:none;transition:opacity .3s';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = `🧠 Learned ${count} correction${count > 1 ? 's' : ''} — future uploads will auto-categorize these`;
+      toast.style.opacity = '1';
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
     }
 
     function cancelTxEditMode() {
